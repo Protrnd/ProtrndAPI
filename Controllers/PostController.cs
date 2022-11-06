@@ -16,7 +16,7 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllPostsAsync() });
         }
 
-        [HttpGet("get/{page}")]
+        [HttpGet("fetch/{page}")]
         public async Task<ActionResult<ActionResponse>> GetPostsPaginated(int page)
         {
             return Ok(new ActionResponse { Successful = true, Message = $"Posts results for page {page}", StatusCode = 200, Data = await _postsService.GetPagePostsAsync(page) });

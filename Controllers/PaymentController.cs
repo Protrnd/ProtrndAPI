@@ -11,12 +11,13 @@ namespace ProtrndWebAPI.Controllers
     public class PaymentController : BaseController
     {
         private PayStackApi PayStack { get; set; }
-
+        private readonly string accountToken;
         private readonly string token;
 
         public PaymentController(IServiceProvider serviceProvider, IConfiguration configuration) : base(serviceProvider)
         {
             token = configuration["Payment:PaystackSK"];
+            accountToken = configuration["Payment:AccEncrypt"];
             PayStack = new(token);
         }
 
@@ -135,21 +136,38 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("verify/promotion")]
         public async Task<ActionResult> VerifyPromotionPayment(VerifyTransaction promotion)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
             TransactionVerifyResponse response = PayStack.Transactions.Verify(promotion.Reference);
             if (response.Data.Status == "success")
             {
-                var promotionDto = promotion.Type as Promotion;
+                if (_profile == null || _postsService == null || _paymentService == null || promotion.Type is not Promotion promotionDto)
+                    return new ObjectResult(new ActionResponse
+                    {
+                        Successful = false,
+                        Message = "Error making connection",
+                        Data = response.Data.Reference,
+                        StatusCode = 412
+                    })
+                    { StatusCode = 412 };
+                var amount = response.Data.Amount / 100;
+                var totalIsValid = amount == promotionDto.Amount;
+                if (!totalIsValid)
+                    return BadRequest(new ActionResponse
+                    {
+                        Successful = false,
+                        Message = "Invalid Amount paid for promotion",
+                        Data = response.Data.Reference,
+                        StatusCode = 400
+                    });
                 var transaction = new Transaction
                 {
-                    Amount = 1500,
+                    Amount = amount,
                     ProfileId = _profile.Identifier,
                     CreatedAt = DateTime.Now,
                     TrxRef = response.Data.Reference,
                     ItemId = promotionDto.PostId,
                     Purpose = $"Pay for promotion id = {promotionDto.PostId}"
                 };
-
+                
                 var verifyStatus = await _paymentService.InsertTransactionAsync(transaction);
                 if (verifyStatus)
                 {
@@ -164,13 +182,23 @@ namespace ProtrndWebAPI.Controllers
                         });
                 }
             }
-            return BadRequest(new ActionResponse
+            return new ObjectResult(new ActionResponse
             {
                 Successful = false,
                 Message = response.Message,
                 Data = null,
                 StatusCode = 422
-            });
+            })
+            { StatusCode = 422 };
+        }
+
+        [HttpPost("link/account")]
+        public async Task<ActionResult<ActionResponse>> LinkAccount(AccountDetailsDTO accountDetailsDTO)
+        {
+            var accountLinked = await _paymentService.AddAccountDetailsAsync(accountDetailsDTO, accountToken);
+            if (accountLinked == null)
+                return BadRequest(new ActionResponse { Data = null, StatusCode = 400, Successful = false, Message = "Account Linking failed" });
+            return Ok(new ActionResponse { Data = accountLinked, StatusCode = 200, Successful = true, Message = "Account Linked Successfully" });
         }
 
         [HttpPost("verify/accept_gift/{id}/{reference}")]

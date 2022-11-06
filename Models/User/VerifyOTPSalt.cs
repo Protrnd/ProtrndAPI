@@ -1,0 +1,10 @@
+﻿namespace ProtrndWebAPI.Models.User
+{
+    public class VerifyOTPSalt
+    {
+        public string PlainText { get; set; } = string.Empty;
+        public byte[] OTPHash { get; set; }
+        public string Type { get; set; } = "cookie";
+        public ProfileDTO ProfileDto { get; set; } = null!;
+    }
+}

@@ -15,11 +15,16 @@ namespace ProtrndWebAPI.Services
                 
         }
 
-        public async Task<AccountDetails> AddAccountDetailsAsync(AccountDetailsDTO account, string token)
+        public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account, string token)
         {
             var accountDetails = new AccountDetails { CardNumber = EncryptDataWithAes(account.CardNumber, token), CVV = EncryptDataWithAes(account.CVV, token), ExpirtyDate = EncryptDataWithAes(account.ExpirtyDate, token), ProfileId = account.ProfileId };
             await _accountDetailsCollection.InsertOneAsync(accountDetails);
-            return accountDetails;
+            var filter = Builders<Profile>.Filter.Eq(p => p.Identifier, account.ProfileId);
+            var update = Builders<Profile>.Update.Set(s => s.AccountLinked, true);
+            var updateResult = await _profileCollection.FindOneAndUpdateAsync(filter, update);
+            if (accountDetails != null && updateResult != null)
+                return accountDetails;
+            return null;
         }
 
         private static string EncryptDataWithAes(string plainText, string token)

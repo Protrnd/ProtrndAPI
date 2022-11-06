@@ -13,7 +13,7 @@ namespace ProtrndWebAPI.Models.Posts
         public List<string> UploadUrls { get; set; } = new List<string>();
 
         [JsonPropertyName("location")]
-        public string Location { get; set; } = string.Empty;
+        public Location Location { get; set; } = null!;
 
         [JsonPropertyName("category")]
         public List<string> Category { get; set; } = new List<string>();

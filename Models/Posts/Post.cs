@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace ProtrndWebAPI.Models.Posts
 {
@@ -16,7 +14,7 @@ namespace ProtrndWebAPI.Models.Posts
         [JsonPropertyName("uploadurls")]
         public List<string>? UploadUrls { get; set; } = null;
         [JsonPropertyName("location")]
-        public string Location { get; set; } = string.Empty;
+        public Location Location { get; set; } = null!;
         [JsonPropertyName("category")]
         public List<string> Category { get; set; } = new List<string>();
         [JsonPropertyName("acceptgift")]

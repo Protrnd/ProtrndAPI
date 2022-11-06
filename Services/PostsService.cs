@@ -1,6 +1,4 @@
-﻿using MailKit.Net.Smtp;
-using Microsoft.Extensions.Options;
-using MimeKit;
+﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Settings;
@@ -25,18 +23,15 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetPagePostsAsync(int page)
         {
-            var pageResults = 10f;
-            var posts = await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled)).ToListAsync();
-            var pageCount = Math.Ceiling(posts.Count / pageResults);
-            return posts.Skip((page - 1) * (int)pageResults)
-                .Take((int)pageResults)
-                .ToList();
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled)).Skip((page - 1) * 10)
+                .Limit(10)
+                .ToListAsync();
         }
 
         public async Task<bool> PromoteAsync(Profile profile, Promotion promotion)
         {
             promotion.Identifier = promotion.Id;
-            promotion.ProfileId = profile.Identifier;
+            promotion.ProfileId = profile.Id;
             try
             {
                 await _promotionCollection.InsertOneAsync(promotion);
@@ -85,22 +80,6 @@ namespace ProtrndWebAPI.Services
             return profiles;
         }
 
-        private static void SendMail(string To, string Body)
-        {
-            var companyAddress = "maryse.abshire24@ethereal.email";
-            var _email = new MimeMessage();
-            _email.From.Add(MailboxAddress.Parse(companyAddress));
-            _email.To.Add(MailboxAddress.Parse(To));
-            _email.Cc.Add(MailboxAddress.Parse("Jamesodike26@gmail.com"));
-            _email.Subject = $"Request for withdrawal";
-            _email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = Body };
-            using var smtp1 = new SmtpClient();
-            smtp1.Connect("smtp.ethereal.email", 587, MailKit.Security.SecureSocketOptions.StartTls);
-            smtp1.Authenticate(companyAddress, "9sSpFDJsceTZ1aUD8E");
-            smtp1.Send(_email);
-            smtp1.Disconnect(true);
-        }
-                
         public async Task<bool> AcceptGift(Guid id)
         {
             var filter = Builders<Post>.Filter.Eq(p => p.Identifier, id);
@@ -136,7 +115,7 @@ namespace ProtrndWebAPI.Services
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpireAt <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.Name == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpireAt <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.State == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
         }
 
         public async Task<bool> AddLikeAsync(Like like)

@@ -17,7 +17,7 @@
             {
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new ActionResponse { StatusCode = 500, Message = "Internal server Error", Successful = false });
+                await context.Response.WriteAsJsonAsync(new ActionResponse { StatusCode = 500, Message = "Internal Server Error", Successful = false });
             }
         }
     }

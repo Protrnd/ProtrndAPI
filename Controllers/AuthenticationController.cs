@@ -24,7 +24,32 @@ namespace ProtrndWebAPI.Controllers
         {
             _configuration = configuartion;
         }
-        
+
+        private static byte[] EncryptDataWithAes(string plainText, string token)
+        {
+            byte[] inputArray = Encoding.UTF8.GetBytes(plainText);
+            var tripleDES = Aes.Create();
+            tripleDES.Key = Encoding.UTF8.GetBytes(token);
+            tripleDES.Mode = CipherMode.ECB;
+            tripleDES.Padding = PaddingMode.PKCS7;
+            ICryptoTransform cTransform = tripleDES.CreateEncryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(inputArray, 0, inputArray.Length);
+            tripleDES.Clear();
+            return resultArray;
+        }
+
+        private static string DecryptDataWithAes(byte[] cipherText, string token)
+        {
+            var tripleDES = Aes.Create();
+            tripleDES.Key = Encoding.UTF8.GetBytes(token);
+            tripleDES.Mode = CipherMode.ECB;
+            tripleDES.Padding = PaddingMode.PKCS7;
+            ICryptoTransform cTransform = tripleDES.CreateDecryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(cipherText, 0, cipherText.Length);
+            tripleDES.Clear();
+            return Encoding.UTF8.GetString(resultArray);
+        }
+
         [HttpGet]
         [ProTrndAuthorizationFilter]
         public ActionResult<ActionResponse> GetMe()
@@ -43,8 +68,8 @@ namespace ProtrndWebAPI.Controllers
                 return BadRequest(new ActionResponse { Message = Constants.UserExists });
             }
 
-            var otp = SendEmail(request.Email);
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = otp });
+            var otp = SendOtpEmail(request.Email);
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = EncryptDataWithAes(otp.ToString(), _configuration["AppSettings:OTP"]) });
         }
 
         [HttpPost("forgot-password")]
@@ -56,7 +81,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
             }
-            //SendEmail(email)
+            var otp = SendOtpEmail(email);
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Email sent" });
         }
 
@@ -68,7 +93,7 @@ namespace ProtrndWebAPI.Controllers
             if (register == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
 
-            CreatePasswordHash(profile.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            CreateHash(profile.Password, out byte[] passwordHash, out byte[] passwordSalt);
             register.PasswordHash = passwordHash;
             register.PasswordSalt = passwordSalt;
             var result = await _regService.ResetPassword(register);
@@ -77,28 +102,35 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
         }
 
-        private static int SendEmail(string to)
+        private int SendOtpEmail(string to)
         {
+            var from = _configuration["EmailSettings:Address"];
+            var connection = _configuration["EmailSettings:Connection"];
+            var password = _configuration["EmailSettings:Password"];
             var email = new MimeMessage();
-            email.From.Add(MailboxAddress.Parse("noreply@protrnd.com"));
+            email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse(to));
             email.Subject = "Your ProTrnd One-Time-Password";
             var otp = GenerateOTP();
             email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your OTP is {otp}" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
-            smtp.Connect("smtppro.zoho.com", 465);
-            smtp.Authenticate("noreply@protrnd.com", "nrppt@$%JT22");
+            smtp.Connect(connection, 465);
+            smtp.Authenticate(from, password);
             smtp.Send(email);
             smtp.Disconnect(true);
             return otp;
         }
 
-        [HttpPost("verify/otp/{type}")]
+        [HttpPost("verify/otp")]
         [AllowAnonymous]
-        public async Task<ActionResult<ActionResponse>> VerifyOTP(string type, ProfileDTO request)
+        public async Task<ActionResult<ActionResponse>> VerifyOTP(VerifyOTPSalt verify)
         {
-            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            var otp = DecryptDataWithAes(verify.OTPHash, _configuration["AppSettings:OTP"]);
+            if (otp != verify.PlainText)
+                return new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid otp inserted", Successful = false, Data = false }) { StatusCode = 403 };
+            var request = verify.ProfileDto;
+            CreateHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
             var register = new Register
             {
                 Email = request.Email.Trim().ToLower(),
@@ -113,7 +145,7 @@ namespace ProtrndWebAPI.Controllers
             var result = await _regService.InsertAsync(register);
             if (result == null)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Error registering user!" });
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await LoginUser(register, type) }); ;
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await LoginUser(register, verify.Type) }); ;
         }
 
         [HttpPost("login/{type}")]
@@ -124,7 +156,7 @@ namespace ProtrndWebAPI.Controllers
 
             if (result == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            if (!VerifyPasswordHash(result, login.Password, result.PasswordHash))
+            if (!VerifyHash(result.PasswordSalt, login.Password, result.PasswordHash))
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = Constants.WrongEmailPassword });
 
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Login Successful", Data = await LoginUser(result, type) });
@@ -132,11 +164,11 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("logout")]
         [ProTrndAuthorizationFilter]
-        public ActionResult<ActionResponse> Logout()
+        public async Task<ActionResult<ActionResponse>> Logout()
         {
             try
             {
-                // Modify logout function
+                await HttpContext.SignOutAsync();
                 return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
             }
             catch (Exception)
@@ -155,18 +187,14 @@ namespace ProtrndWebAPI.Controllers
             List<Claim> claims = new()
                 {
                     new Claim(Constants.ID, user.Id.ToString()),
+                    new Claim(Constants.ID,user.Id.ToString()),
                     new Claim(Constants.Name, user.UserName),
                     new Claim(Constants.Email, user.Email),
                     new Claim(Constants.FullName, user.FullName),
                     new Claim(Constants.AccType, user.AccountType),
                     new Claim(Constants.Location, user.Location),
+                    new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString())
                 };
-
-            bool disabled = false;
-            if (user.AccountType == Constants.Disabled)
-                disabled = true;
-
-            claims.Add(new Claim(Constants.Disabled, disabled.ToString()));
 
             var sk = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration[Constants.TokenLoc]));
             var credentials = new SigningCredentials(sk, SecurityAlgorithms.HmacSha512Signature);
@@ -179,22 +207,26 @@ namespace ProtrndWebAPI.Controllers
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, AllowRefresh = true, ExpiresUtc = DateTimeOffset.Now.AddMinutes(30) });
                 return "";
             }
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt;
+            else if (type == "jwt")
+            {
+                var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+                return jwt;
+            }
+            return null;
         }
 
-        private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        private static void CreateHash(string plaintext, out byte[] hash, out byte[] salt)
         {
             using var hmac = new HMACSHA512();
-            passwordSalt = hmac.Key;
-            passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            salt = hmac.Key;
+            hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(plaintext));
         }
 
-        private static bool VerifyPasswordHash(Register user, string password, byte[] passwordHash)
+        private static bool VerifyHash(byte[] salt, string plaintext, byte[] hash)
         {
-            using var hmac = new HMACSHA512(user.PasswordSalt);
-            var computeHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            return computeHash.SequenceEqual(passwordHash);
+            using var hmac = new HMACSHA512(salt);
+            var computeHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(plaintext));
+            return computeHash.SequenceEqual(hash);
         }
 
         private static int GenerateOTP()

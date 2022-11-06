@@ -16,8 +16,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 {
     builder.SetIsOriginAllowed(host => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
@@ -36,7 +34,6 @@ builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<PaymentService>();
 builder.Services.AddAntiforgery(o => o.SuppressXFrameOptionsHeader = true);
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -83,7 +80,6 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
