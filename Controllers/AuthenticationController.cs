@@ -187,7 +187,7 @@ namespace ProtrndWebAPI.Controllers
             List<Claim> claims = new()
                 {
                     new Claim(Constants.ID, user.Id.ToString()),
-                    new Claim(Constants.ID,user.Id.ToString()),
+                    new Claim(Constants.Identifier,user.Id.ToString()),
                     new Claim(Constants.Name, user.UserName),
                     new Claim(Constants.Email, user.Email),
                     new Claim(Constants.FullName, user.FullName),
