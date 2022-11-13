@@ -206,7 +206,9 @@ namespace ProtrndWebAPI.Controllers
                 Data = null,
                 StatusCode = 422
             })
-            { StatusCode = 422 };
+            {
+                StatusCode = 422
+            };
         }
 
         [HttpPost("charge/promotion")]
