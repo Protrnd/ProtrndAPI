@@ -59,7 +59,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("top_up/balance/{total}")]
         public async Task<ActionResult<object>> TopUpBalance(int total)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
+            return NotFound();
             TransactionInitializeRequest request = new()
             {
                 AmountInKobo = total * 100,
@@ -81,7 +81,7 @@ namespace ProtrndWebAPI.Controllers
                     ItemId = Guid.NewGuid()
                 };
 
-                await _paymentService.InsertTransactionAsync(transaction);
+                //await _paymentService.InsertTransactionAsync(transaction);
                 return Ok(new { Success = true, Ref = request.Reference, Data = response.Data.AuthorizationUrl });
             }
             return BadRequest(new { Success = false, Ref = request.Reference, Data = "Error making transaction" });
@@ -134,12 +134,12 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("verify/promotion")]
-        public async Task<ActionResult> VerifyPromotionPayment(VerifyTransaction promotion)
+        public async Task<ActionResult> VerifyPromotionPayment(VerifyPromotionTransaction promotionTransaction)
         {
-            TransactionVerifyResponse response = PayStack.Transactions.Verify(promotion.Reference);
+            TransactionVerifyResponse response = PayStack.Transactions.Verify(promotionTransaction.Reference);
             if (response.Data.Status == "success")
             {
-                if (_profile == null || _postsService == null || _paymentService == null || promotion.Type is not Promotion promotionDto)
+                if (_profile == null || _postsService == null || _paymentService == null)
                     return new ObjectResult(new ActionResponse
                     {
                         Successful = false,
@@ -148,6 +148,7 @@ namespace ProtrndWebAPI.Controllers
                         StatusCode = 412
                     })
                     { StatusCode = 412 };
+                var promotionDto = promotionTransaction.Promotion;
                 var amount = response.Data.Amount / 100;
                 var totalIsValid = amount == promotionDto.Amount;
                 if (!totalIsValid)
@@ -171,7 +172,23 @@ namespace ProtrndWebAPI.Controllers
                 var verifyStatus = await _paymentService.InsertTransactionAsync(transaction);
                 if (verifyStatus)
                 {
-                    var promotionOk = await _postsService.PromoteAsync(_profile, promotionDto);
+                    promotionDto.AuthCode = response.Data.Authorization.AuthorizationCode;
+                    promotionDto.Email = _profile.Email;
+                    var promotion = new Promotion
+                    {
+                        CreatedAt = DateTime.Now,
+                        Email = _profile.Email,
+                        PostId = promotionDto.PostId,
+                        Audience = promotionDto.Audience,
+                        Amount = promotionDto.Amount,
+                        Currency = "NGN",
+                        ChargeIntervals = "day",
+                        AuthCode = response.Data.Authorization.AuthorizationCode,
+                        BannerUrl = promotionDto.BannerUrl,
+                        NextCharge = DateTime.Now.AddDays(1),
+                        ProfileId = promotionDto.ProfileId
+                    };
+                    var promotionOk = await _postsService.PromoteAsync(_profile, promotion);
                     if (promotionOk)
                         return Ok(new ActionResponse
                         {
@@ -190,6 +207,15 @@ namespace ProtrndWebAPI.Controllers
                 StatusCode = 422
             })
             { StatusCode = 422 };
+        }
+
+        [HttpPost("charge/promotion")]
+        public async Task<ActionResult<ActionResponse>> ChargeCard(Promotion promotion)
+        {
+            var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = _profile.Email, Amount = (promotion.Amount * 100).ToString() });
+            if (response.Data.Status == "success")
+                return Ok();
+            return BadRequest();
         }
 
         [HttpPost("link/account")]

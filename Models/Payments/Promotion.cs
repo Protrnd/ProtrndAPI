@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ProtrndWebAPI.Models.Payments
 {
@@ -15,8 +16,13 @@ namespace ProtrndWebAPI.Models.Payments
         public string BannerUrl { get; set; } = string.Empty;
         [JsonPropertyName("createdat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        [JsonPropertyName("expireat")]
-        public DateTime ExpireAt { get; set; } = DateTime.Now.AddDays(7);
+        [JsonPropertyName("nextcharge")]
+        public DateTime NextCharge { get; set; } = DateTime.Now.AddDays(7);
+        [JsonPropertyName("useremail")]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [JsonPropertyName("chargeintervals")]
+        public string ChargeIntervals { get; set; } = "day";
         [JsonPropertyName("currency")]
         public string Currency { get; set; } = string.Empty;
         [JsonPropertyName("amount")]
@@ -25,5 +31,7 @@ namespace ProtrndWebAPI.Models.Payments
         public List<Location> Audience { get; set; } = null!;
         [JsonPropertyName("disabled")]
         public bool Disabled { get; set; } = false;
+        [JsonPropertyName("authcode")]
+        public string AuthCode { get; set; } = string.Empty;
     }
 }

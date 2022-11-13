@@ -115,7 +115,7 @@ namespace ProtrndWebAPI.Services
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpireAt <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.State == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.NextCharge <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.State == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
         }
 
         public async Task<bool> AddLikeAsync(Like like)

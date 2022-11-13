@@ -15,5 +15,7 @@ namespace ProtrndWebAPI.Models.Payments
         public string CVV { get; set; } = string.Empty;
         [JsonPropertyName("profileid")]
         public Guid ProfileId { get; set; }
+        [JsonPropertyName("authcode")]
+        public string AuthCode { get; set; } = string.Empty;
     }
 }

@@ -7,5 +7,6 @@
         public string AccountNumber { get; set; } = string.Empty;
         public string CVV { get; set; } = string.Empty;
         public Guid ProfileId { get; set; }
+        public string AuthCode { get; set; } = string.Empty;
     }
 }

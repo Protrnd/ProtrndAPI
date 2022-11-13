@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
 using System.Security.Cryptography;
 using System.Text;
+using static MongoDB.Driver.WriteConcern;
 using AccountDetailsDTO = ProtrndWebAPI.Models.Payments.AccountDetailsDTO;
 
 namespace ProtrndWebAPI.Services
@@ -17,7 +20,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account, string token)
         {
-            var accountDetails = new AccountDetails { CardNumber = EncryptDataWithAes(account.CardNumber, token), CVV = EncryptDataWithAes(account.CVV, token), ExpirtyDate = EncryptDataWithAes(account.ExpirtyDate, token), ProfileId = account.ProfileId };
+            var accountDetails = new AccountDetails { AuthCode = account.AuthCode, CardNumber = EncryptDataWithAes(account.CardNumber, token), CVV = EncryptDataWithAes(account.CVV, token), ExpirtyDate = EncryptDataWithAes(account.ExpirtyDate, token), ProfileId = account.ProfileId };
             await _accountDetailsCollection.InsertOneAsync(accountDetails);
             var filter = Builders<Profile>.Filter.Eq(p => p.Identifier, account.ProfileId);
             var update = Builders<Profile>.Update.Set(s => s.AccountLinked, true);
@@ -62,6 +65,7 @@ namespace ProtrndWebAPI.Services
             try
             {
                 transaction.Id = Guid.NewGuid();
+                transaction.Identifier = transaction.Id;
                 await _transactionCollection.InsertOneAsync(transaction);
                 return true;
             }
@@ -81,6 +85,53 @@ namespace ProtrndWebAPI.Services
                 total += transaction.Amount;
             }
             return total;
+        }
+
+        public async Task<List<Promotion>> GetDuePromotions()
+        {
+            return await _promotionCollection.Find(p => !p.Disabled && p.NextCharge == DateTime.Today).ToListAsync();
+        }
+
+        public async Task<bool> UpdateNextPayDate(Promotion promotion)
+        {
+            var interval = promotion.ChargeIntervals;
+            if (interval == "day")
+                promotion.NextCharge.AddDays(1);
+            if (interval == "week")
+                promotion.NextCharge.AddWeeks(1);
+            if (interval == "month")
+                promotion.NextCharge.AddMonths(1);
+            var filter = Builders<Promotion>.Filter.Where(p => !p.Disabled && p.ProfileId == promotion.ProfileId && p.Identifier == promotion.Identifier);
+            var updateSuccess = await _promotionCollection.ReplaceOneAsync(filter, promotion);
+            var transaction = new Transaction
+            {
+                Amount = promotion.Amount,
+                ProfileId = promotion.Identifier,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = promotion.PostId,
+                Purpose = $"Pay for promotion id = {promotion.PostId}"
+            };
+            await InsertTransactionAsync(transaction);
+            return updateSuccess.ModifiedCount > 0;
+        }
+
+        public async Task<bool> DisablePromotion(Promotion promotion)
+        {
+            var filter = Builders<Promotion>.Filter.Where(p => !p.Disabled && p.ProfileId == promotion.ProfileId && p.Identifier == promotion.Identifier);
+            promotion.Disabled = true;
+            var updateSuccess = await _promotionCollection.ReplaceOneAsync(filter, promotion);
+            var transaction = new Transaction
+            {
+                Amount = promotion.Amount,
+                ProfileId = promotion.Identifier,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = promotion.PostId,
+                Purpose = $"Payment failef for promotion id = {promotion.PostId}"
+            };
+            await InsertTransactionAsync(transaction);
+            return updateSuccess.ModifiedCount > 0;
         }
 
         public async Task<bool> RequestWithdrawalAsync(Profile profile, int total)

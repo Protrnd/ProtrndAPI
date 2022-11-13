@@ -2,11 +2,11 @@
 
 namespace ProtrndWebAPI.Models.Payments
 {
-    public class VerifyTransaction
+    public class VerifyPromotionTransaction
     {
         [JsonPropertyName("reference")]
         public string Reference { get; set; } = string.Empty;
-        [JsonPropertyName("type")]
-        public object Type { get; set; } = null!;
+        [JsonPropertyName("promotion")]
+        public PromotionDTO Promotion { get; set; } = null!;
     }
 }
