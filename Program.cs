@@ -13,12 +13,6 @@ using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using ProtrndWebAPI.JobFactory;
-using ProtrndWebAPI.Schedular;
-using Quartz.Impl;
-using Quartz.Spi;
-using Quartz;
-using ProtrndWebAPI.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
