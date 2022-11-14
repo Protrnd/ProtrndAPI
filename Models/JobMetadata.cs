@@ -1,4 +1,4 @@
-﻿namespace CRONJOBTesting.Models
+﻿namespace ProtrndWebAPI.Models
 {
     public class JobMetadata
     {

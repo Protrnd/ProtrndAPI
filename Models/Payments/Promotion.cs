@@ -17,7 +17,7 @@ namespace ProtrndWebAPI.Models.Payments
         [JsonPropertyName("createdat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [JsonPropertyName("nextcharge")]
-        public DateTime NextCharge { get; set; } = DateTime.Now.AddDays(7);
+        public DateTime NextCharge { get; set; } = DateTime.Now.AddMinutes(10);
         [JsonPropertyName("useremail")]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;

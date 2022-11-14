@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using PayStack.Net;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
@@ -13,9 +14,10 @@ namespace ProtrndWebAPI.Services
 {
     public class PaymentService: BaseService
     {
-        public PaymentService(IOptions<DBSettings> settings):base(settings)
+        //private PayStackApi PayStack { get; set; }
+        public PaymentService(IOptions<DBSettings> settings) :base(settings)
         {
-                
+            //PayStack = new(configuration["Payment:PaystackSK"]);
         }
 
         public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account, string token)
@@ -87,9 +89,19 @@ namespace ProtrndWebAPI.Services
             return total;
         }
 
+        //public async Task<bool> ChargeAuthCode(Promotion promotion)
+        //{
+        //    var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = promotion.Email, Amount = (promotion.Amount * 100).ToString() });
+        //    if (response.Data.Status == "success")
+        //        await UpdateNextPayDate(promotion);
+        //    else
+        //        await DisablePromotion(promotion);
+        //    return true;
+        //}
+
         public async Task<List<Promotion>> GetDuePromotions()
         {
-            return await _promotionCollection.Find(p => !p.Disabled && p.NextCharge == DateTime.Today).ToListAsync();
+            return await _promotionCollection.Find(p => !p.Disabled && p.NextCharge == DateTime.Now || p.NextCharge.AddMinutes(1) == DateTime.Now).ToListAsync();
         }
 
         public async Task<bool> UpdateNextPayDate(Promotion promotion)

@@ -1,8 +1,7 @@
-﻿using CRONJOBTesting.Models;
-using Quartz;
+﻿using Quartz;
 using Quartz.Spi;
 
-namespace CRONJOBTesting.Schedular
+namespace ProtrndWebAPI.Schedular
 {
     public class MySchedular : IHostedService
     {

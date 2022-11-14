@@ -4,7 +4,7 @@ using ProtrndWebAPI.Services;
 using ProtrndWebAPI.Settings;
 using Quartz;
 
-namespace CRONJOBTesting.Jobs
+namespace ProtrndWebAPI .Jobs
 {
     public class PromotionPaymentJob : IJob
     {
@@ -16,17 +16,27 @@ namespace CRONJOBTesting.Jobs
             PaymentService = new PaymentService(settings);
         }
 
-        public async Task Execute(IJobExecutionContext context)
+        public Task Execute(IJobExecutionContext context)
         {
-            var promotions = await PaymentService.GetDuePromotions();
-            foreach (var promotion in promotions)
-            {
-                var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = promotion.Email, Amount = (promotion.Amount * 100).ToString() });
-                if (response.Data.Status == "success")
-                    await PaymentService.UpdateNextPayDate(promotion);
-                else
-                    await PaymentService.DisablePromotion(promotion);
-            }
+            Console.WriteLine("Hello World");
+            //Task.Run(async () =>
+            //{
+            //    var promotions = await PaymentService.GetDuePromotions();
+            //    Console.WriteLine("Promotions checked");
+            //    foreach (var promotion in promotions)
+            //    {
+            //        var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = promotion.Email, Amount = (promotion.Amount * 100).ToString() });
+            //        if (response.Data.Status == "success")
+            //        {
+            //            await PaymentService.UpdateNextPayDate(promotion);
+            //            Console.WriteLine("Charged and updated");
+            //        }
+            //        else
+            //            await PaymentService.DisablePromotion(promotion);
+            //    }
+            //});
+            
+            return Task.CompletedTask;
         }
     }
 }

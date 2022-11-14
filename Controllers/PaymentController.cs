@@ -59,7 +59,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("top_up/balance/{total}")]
         public async Task<ActionResult<object>> TopUpBalance(int total)
         {
-            return NotFound();
+            //return NotFound();
             TransactionInitializeRequest request = new()
             {
                 AmountInKobo = total * 100,
@@ -180,14 +180,15 @@ namespace ProtrndWebAPI.Controllers
                         Email = _profile.Email,
                         PostId = promotionDto.PostId,
                         Audience = promotionDto.Audience,
-                        Amount = promotionDto.Amount,
+                        Amount = amount,
                         Currency = "NGN",
                         ChargeIntervals = "day",
                         AuthCode = response.Data.Authorization.AuthorizationCode,
                         BannerUrl = promotionDto.BannerUrl,
-                        NextCharge = DateTime.Now.AddDays(1),
-                        ProfileId = promotionDto.ProfileId
+                        NextCharge = DateTime.Now.AddMinutes(1),
+                        ProfileId = _profile.Identifier
                     };
+                    promotion.Identifier = promotion.Id;
                     var promotionOk = await _postsService.PromoteAsync(_profile, promotion);
                     if (promotionOk)
                         return Ok(new ActionResponse

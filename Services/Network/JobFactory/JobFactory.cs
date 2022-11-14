@@ -1,7 +1,7 @@
 ﻿using Quartz;
 using Quartz.Spi;
 
-namespace CRONJOBTesting.JobFactory
+namespace ProtrndWebAPI.JobFactory
 {
     public class JobFactory : IJobFactory
     {
