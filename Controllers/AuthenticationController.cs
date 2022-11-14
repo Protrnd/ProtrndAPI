@@ -59,9 +59,15 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<ActionResult<ActionResponse>> Register(ProfileDTO request)
+        public async Task<ActionResult<ActionResponse>> Register(RegisterDTO request)
         {
-            var userExists = await GetUserResult(request);
+
+            var userExists = await GetUserResult(new ProfileDTO
+            {
+                Email = request.Email,
+                FullName = request.FullName,
+                UserName = request.UserName
+            });
 
             if (userExists != null)
             {
@@ -69,7 +75,13 @@ namespace ProtrndWebAPI.Controllers
             }
 
             var otp = SendOtpEmail(request.Email);
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = EncryptDataWithAes(otp.ToString(), _configuration["AppSettings:OTP"]) });
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                StatusCode = 200,
+                Message = ActionResponseMessage.Ok,
+                Data = EncryptDataWithAes(otp.ToString(), _configuration["AppSettings:OTP"])
+            });
         }
 
         [HttpPost("forgot-password")]
@@ -82,7 +94,12 @@ namespace ProtrndWebAPI.Controllers
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
             }
             var otp = SendOtpEmail(email);
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Email sent" });
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                StatusCode = 200,
+                Message = "Email sent"
+            });
         }
 
         [HttpPut("reset-password")]
@@ -129,7 +146,7 @@ namespace ProtrndWebAPI.Controllers
             var otp = DecryptDataWithAes(verify.OTPHash, _configuration["AppSettings:OTP"]);
             if (otp != verify.PlainText)
                 return new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid otp inserted", Successful = false, Data = false }) { StatusCode = 403 };
-            var request = verify.ProfileDto;
+            var request = verify.RegisterDto;
             CreateHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
             var register = new Register
             {
@@ -139,8 +156,7 @@ namespace ProtrndWebAPI.Controllers
                 UserName = request.UserName.Trim().ToLower(),
                 FullName = request.FullName.Trim().ToLower(),
                 RegistrationDate = DateTime.Now,
-                AccountType = request.AccountType.Trim().ToLower(),
-                Location = request.Location!.Trim().ToLower()
+                AccountType = request.AccountType.Trim().ToLower()
             };
             var result = await _regService.InsertAsync(register);
             if (result == null)
