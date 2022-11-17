@@ -61,7 +61,6 @@ namespace ProtrndWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ActionResponse>> Register(RegisterDTO request)
         {
-
             var userExists = await GetUserResult(new ProfileDTO
             {
                 Email = request.Email,
@@ -80,50 +79,52 @@ namespace ProtrndWebAPI.Controllers
                 Successful = true,
                 StatusCode = 200,
                 Message = ActionResponseMessage.Ok,
-                Data = EncryptDataWithAes(otp.ToString(), _configuration["AppSettings:OTP"])
+                Data = EncryptDataWithAes(otp.ToString(), _configuration[Constants.OTPEncryptionRoute])
             });
         }
 
         [HttpPost("forgot-password")]
         [AllowAnonymous]
-        public async Task<ActionResult<ActionResponse>> ForgotPassword(string email)
+        public async Task<ActionResult<ActionResponse>> ForgotPassword([FromBody]Login login)
         {
-            var userExists = await GetUserResult(new ProfileDTO { Email = email });
+            var userExists = await GetUserResult(new ProfileDTO { Email = login.Email });
             if (userExists == null)
             {
-                return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
+                return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound, Successful = false, Data = null });
             }
-            var otp = SendOtpEmail(email);
+
+            var otp = SendOtpEmail(login.Email);
             return Ok(new ActionResponse
             {
                 Successful = true,
                 StatusCode = 200,
-                Message = "Email sent"
+                Message = "Email sent",
+                Data = EncryptDataWithAes(otp.ToString(), _configuration[Constants.OTPEncryptionRoute])
             });
         }
 
         [HttpPut("reset-password")]
         [AllowAnonymous]
-        public async Task<ActionResult<ActionResponse>> ResetPassword(ProfileDTO profile)
+        public async Task<ActionResult<ActionResponse>> ResetPassword(ResetPasswordDTO resetPasswordDto)
         {
-            var register = await GetUserResult(new ProfileDTO { Email = profile.Email });
-            if (register == null)
+            var register = await GetUserResult(new ProfileDTO { Email = resetPasswordDto.Reset.Email });
+            if (_regService == null || register == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
 
-            CreateHash(profile.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            CreateHash(resetPasswordDto.Reset.Password, out byte[] passwordHash, out byte[] passwordSalt);
             register.PasswordHash = passwordHash;
             register.PasswordSalt = passwordSalt;
             var result = await _regService.ResetPassword(register);
             if (result == null)
-                return BadRequest(new ActionResponse { Message = "Error occurred when resetting password, please try again!" });
+                return BadRequest(new ActionResponse { StatusCode = 400, Data = null, Successful = false, Message = "Error occurred when resetting password, please try again!" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
         }
 
         private int SendOtpEmail(string to)
         {
-            var from = _configuration["EmailSettings:Address"];
-            var connection = _configuration["EmailSettings:Connection"];
-            var password = _configuration["EmailSettings:Password"];
+            var from = _configuration[Constants.NoreplyEmailFrom];
+            var connection = _configuration[Constants.NoreplyEmailConnection];
+            var password = _configuration[Constants.NoreplyEmailPass];
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse(to));
@@ -143,8 +144,8 @@ namespace ProtrndWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ActionResponse>> VerifyOTP(VerifyOTPSalt verify)
         {
-            var otp = DecryptDataWithAes(verify.OTPHash, _configuration["AppSettings:OTP"]);
-            if (otp != verify.PlainText)
+            var otp = DecryptDataWithAes(verify.OTPHash, _configuration[Constants.OTPEncryptionRoute]);
+            if (_regService == null || otp != verify.PlainText)
                 return new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid otp inserted", Successful = false, Data = false }) { StatusCode = 403 };
             var request = verify.RegisterDto;
             CreateHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);

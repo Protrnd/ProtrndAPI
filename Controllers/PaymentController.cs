@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver.Linq;
 using PayStack.Net;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Services.Network;
@@ -59,7 +60,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("top_up/balance/{total}")]
         public async Task<ActionResult<object>> TopUpBalance(int total)
         {
-            //return NotFound();
+            return NotFound();
             TransactionInitializeRequest request = new()
             {
                 AmountInKobo = total * 100,
@@ -182,12 +183,18 @@ namespace ProtrndWebAPI.Controllers
                         Audience = promotionDto.Audience,
                         Amount = amount,
                         Currency = "NGN",
-                        ChargeIntervals = "day",
+                        ChargeIntervals = promotionDto.ChargeIntervals,
                         AuthCode = response.Data.Authorization.AuthorizationCode,
                         BannerUrl = promotionDto.BannerUrl,
-                        NextCharge = DateTime.Now.AddMinutes(1),
-                        ProfileId = _profile.Identifier
+                        ProfileId = _profile.Identifier,
+                        Categories = promotionDto.Categories
                     };
+                    if (promotion.ChargeIntervals == "day")
+                        promotion.NextCharge = DateTime.Now.AddDays(1);
+                    if (promotion.ChargeIntervals == "week")
+                        promotion.NextCharge = DateTime.Now.AddWeeks(1);
+                    if (promotion.ChargeIntervals == "month")
+                        promotion.NextCharge = DateTime.Now.AddMonths(1);
                     promotion.Identifier = promotion.Id;
                     var promotionOk = await _postsService.PromoteAsync(_profile, promotion);
                     if (promotionOk)

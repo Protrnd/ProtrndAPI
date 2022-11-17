@@ -36,6 +36,10 @@
         public const string Personal = "personal";
         public const string CORS = "ProTrendCors";
         public const string AUTH = "Authorization";
-        internal static readonly string Location = "Location";
+        public const string Location = "Location";
+        public const string OTPEncryptionRoute = "AppSettings:OTP";
+        public const string NoreplyEmailFrom = "EmailSettings:Address";
+        public const string NoreplyEmailConnection = "EmailSettings:Connection";
+        public const string NoreplyEmailPass = "EmailSettings:Password";
     }
 }

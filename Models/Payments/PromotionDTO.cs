@@ -11,5 +11,7 @@
         public List<Location>? Audience { get; set; } = null;
         public string AuthCode { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public List<string> Categories { get; set; } = new();
+        public string ChargeIntervals { get; internal set; } = "day";
     }
 }

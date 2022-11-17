@@ -6,7 +6,7 @@ namespace ProtrndWebAPI.Models.Posts
     public class CommentDTO
     {
 
-        [JsonPropertyName("uploadid")]
+        [JsonPropertyName("postid")]
         [Required]
         public Guid PostId { get; set; }
         

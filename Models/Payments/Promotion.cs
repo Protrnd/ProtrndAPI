@@ -17,7 +17,7 @@ namespace ProtrndWebAPI.Models.Payments
         [JsonPropertyName("createdat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [JsonPropertyName("nextcharge")]
-        public DateTime NextCharge { get; set; } = DateTime.Now.AddMinutes(10);
+        public DateTime NextCharge { get; set; } = DateTime.Now.AddDays(1);
         [JsonPropertyName("useremail")]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
@@ -33,5 +33,7 @@ namespace ProtrndWebAPI.Models.Payments
         public bool Disabled { get; set; } = false;
         [JsonPropertyName("authcode")]
         public string AuthCode { get; set; } = string.Empty;
+        [JsonPropertyName("categories")]
+        public List<string> Categories { get; set; } = new();
     }
 }
