@@ -10,6 +10,12 @@ namespace ProtrndWebAPI.Controllers
     {
         public ProfileController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
+        [HttpGet]
+        public async Task<ActionResult<ActionResponse>> GetCurrentProfile()
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByIdAsync(_profile.Identifier) });
+        }
+
         [HttpGet("get/id/{id}")]
         public async Task<ActionResult<ActionResponse>> GetProfileById(Guid id)
         {
