@@ -80,7 +80,7 @@ namespace ProtrndWebAPI.Controllers
                 var liked = await _postsService.AddLikeAsync(like);
                 var notiSent = await _notificationService.LikeNotification(_profileClaims, post.ProfileId);
                 if (liked && notiSent)
-                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
+                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = true });
             }
             return NotFound(new ActionResponse { Message = ActionResponseMessage.BadRequest });
         }
@@ -99,7 +99,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 var liked = await _postsService.RemoveLike(id, _profileClaims.ID);
                 if (liked)
-                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
+                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = false });
             }
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
         }
