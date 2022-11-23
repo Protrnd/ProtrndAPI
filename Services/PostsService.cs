@@ -31,7 +31,8 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Promotion>> GetPromotionsPaginatedAsync(int page, TokenClaims profile)
         {
-            var location = profile.Location.Split(',');
+            var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            var location = profileDetail.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
@@ -130,7 +131,8 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Promotion>> GetPromotionsAsync(TokenClaims profile)
         {
-            var location = profile.Location.Split(',');
+            var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            var location = profileDetail.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City

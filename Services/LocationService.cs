@@ -36,7 +36,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Location>> GetLocations()
         {
-            return await _locationCollection.Find(l => l != null).ToListAsync();
+            return await _locationCollection.Find(_ => true).ToListAsync();
         }
     }
 }

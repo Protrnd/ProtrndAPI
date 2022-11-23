@@ -21,8 +21,7 @@ namespace ProtrndWebAPI.Services.UserSevice
                     var user = _contextAccessor.HttpContext.User;
                     result.Email = user.FindFirstValue(Constants.Email);
                     result.ID = Guid.Parse(user.FindFirstValue(Constants.ID));
-                    result.UserName = user.FindFirstValue(Constants.Name);
-                    result.Location = user.FindFirstValue(Constants.Location);
+                    result.UserName = user.FindFirstValue(Constants.UserName);
                     result.Disabled = bool.Parse(user.FindFirstValue(Constants.Disabled));
                     return result;
                 }

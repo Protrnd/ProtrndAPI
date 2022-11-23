@@ -204,15 +204,10 @@ namespace ProtrndWebAPI.Controllers
             List<Claim> claims = new()
                 {
                     new Claim(Constants.ID, user.Id.ToString()),
-                    new Claim(Constants.UserName, user.UserName),
-                    new Claim(Constants.Email, user.Email),
-                    new Claim(Constants.Location, user.Location),
+                    new Claim(Constants.UserName, user.UserName.ToString()),
+                    new Claim(Constants.Email, user.Email.ToString()),
                     new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString())
                 };
-
-            var sk = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration[Constants.TokenLoc]));
-            var credentials = new SigningCredentials(sk, SecurityAlgorithms.HmacSha512Signature);
-            var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddYears(2), signingCredentials: credentials, issuer: "protrnd.com", audience: "https://protrnd.com");
 
             if (type == "cookie")
             {
@@ -223,6 +218,9 @@ namespace ProtrndWebAPI.Controllers
             }
             else if (type == "jwt")
             {
+                var sk = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration[Constants.TokenLoc]));
+                var credentials = new SigningCredentials(sk, SecurityAlgorithms.HmacSha512Signature);
+                var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddYears(2), signingCredentials: credentials, issuer: "protrnd.com", audience: "https://protrnd.com");
                 var jwt = new JwtSecurityTokenHandler().WriteToken(token);
                 return jwt;
             }
