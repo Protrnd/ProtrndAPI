@@ -34,7 +34,7 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = $"Promotions results for page {page}", StatusCode = 200, Data = await _postsService.GetPromotionsPaginatedAsync(page, _profileClaims) });
         }
 
-        [HttpGet("get/{id}/gift/profiles")]
+        [HttpGet("{id}/gift/profiles")]
         public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
         {
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
@@ -49,7 +49,7 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = uploadResult });
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<ActionResult<ActionResponse>> GetPost(Guid id)
         {
             var post = await _postsService.GetSinglePostAsync(id);
@@ -58,13 +58,13 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = post });
         }
 
-        [HttpGet("get/{id}/posts")]
+        [HttpGet("{id}/posts")]
         public async Task<ActionResult<ActionResponse>> GetUserPosts(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetUserPostsAsync(id) });
         }
 
-        [HttpGet("get/{id}/likes")]
+        [HttpGet("{id}/likes")]
         public async Task<ActionResult<ActionResponse>> GetLikes(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetPostLikesAsync(id) });
@@ -104,13 +104,13 @@ namespace ProtrndWebAPI.Controllers
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
         }
 
-        [HttpGet("get/{id}/like/count")]
+        [HttpGet("{id}/like-count")]
         public async Task<ActionResult<ActionResponse>> GetLikesCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetLikesCountAsync(id) });
         }
 
-        [HttpPost("add/comment")]
+        [HttpPost("comment")]
         public async Task<ActionResult<ActionResponse>> AddComment(CommentDTO commentDTO)
         {
             var post = await _postsService.GetSinglePostAsync(commentDTO.PostId);
@@ -125,14 +125,14 @@ namespace ProtrndWebAPI.Controllers
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
         }
 
-        [HttpGet("get/{id}/gifts")]
+        [HttpGet("{id}/gifts")]
         public async Task<ActionResult> GetAllGiftsOnPost(Guid id)
         {
             return NotFound();
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllGiftOnPostAsync(id) });
         }
 
-        [HttpGet("get/{id}/comments")]
+        [HttpGet("{id}/comments")]
         public async Task<ActionResult<ActionResponse>> GetComments(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetCommentsAsync(id) });
