@@ -19,5 +19,6 @@
         public string FavoritesCollection { get; set; } = null!;
         public string GiftsCollection { get; set; } = null!;
         public string AccountDetailsCollection { get; set; } = null!;
+        public string LocationCollection { get; set; } = null!;
     }
 }

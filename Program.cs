@@ -33,6 +33,7 @@ builder.Services.AddSingleton<SearchService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<PaymentService>();
+builder.Services.AddSingleton<LocationService>();
 builder.Services.AddAntiforgery(o => o.SuppressXFrameOptionsHeader = true);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -63,8 +64,9 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
-        ValidateIssuer = false,
-        ValidateAudience = false
+        ValidateIssuer = false, //change to true 
+        ValidateAudience = false, //change to true
+
     };
 })
     .AddPolicyScheme("JWT_OR_COOKIE", "JWT_OR_COOKIE", options =>

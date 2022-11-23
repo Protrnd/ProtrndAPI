@@ -11,20 +11,17 @@ namespace ProtrndWebAPI.Services.UserSevice
             _contextAccessor = httpContextAccessor;
         }
 
-        public Profile? GetProfile()
+        public TokenClaims? GetProfileTokenClaims()
         {
-            var result = new Profile();
+            var result = new TokenClaims();
             if (_contextAccessor != null && _contextAccessor.HttpContext != null)
             {
                 try
                 {
                     var user = _contextAccessor.HttpContext.User;
                     result.Email = user.FindFirstValue(Constants.Email);
-                    result.Id = Guid.Parse(user.FindFirstValue(Constants.ID));
-                    result.Identifier = Guid.Parse(user.FindFirstValue(Constants.Identifier));
+                    result.ID = Guid.Parse(user.FindFirstValue(Constants.ID));
                     result.UserName = user.FindFirstValue(Constants.Name);
-                    result.FullName = user.FindFirstValue(Constants.FullName);
-                    result.AccountType = user.FindFirstValue(Constants.AccType);
                     result.Location = user.FindFirstValue(Constants.Location);
                     result.Disabled = bool.Parse(user.FindFirstValue(Constants.Disabled));
                     return result;

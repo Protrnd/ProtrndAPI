@@ -54,7 +54,7 @@ namespace ProtrndWebAPI.Controllers
         [ProTrndAuthorizationFilter]
         public ActionResult<ActionResponse> GetMe()
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = _profile });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = _profileClaims });
         }
 
         [HttpPost("register")]
@@ -204,24 +204,21 @@ namespace ProtrndWebAPI.Controllers
             List<Claim> claims = new()
                 {
                     new Claim(Constants.ID, user.Id.ToString()),
-                    new Claim(Constants.Identifier,user.Id.ToString()),
-                    new Claim(Constants.Name, user.UserName),
+                    new Claim(Constants.UserName, user.UserName),
                     new Claim(Constants.Email, user.Email),
-                    new Claim(Constants.FullName, user.FullName),
-                    new Claim(Constants.AccType, user.AccountType),
                     new Claim(Constants.Location, user.Location),
                     new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString())
                 };
 
             var sk = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration[Constants.TokenLoc]));
             var credentials = new SigningCredentials(sk, SecurityAlgorithms.HmacSha512Signature);
-            var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddHours(6), signingCredentials: credentials);
+            var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddYears(2), signingCredentials: credentials, issuer: "protrnd.com", audience: "https://protrnd.com");
 
             if (type == "cookie")
             {
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, AllowRefresh = true, ExpiresUtc = DateTimeOffset.Now.AddMinutes(30) });
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, AllowRefresh = true, ExpiresUtc = DateTimeOffset.Now.AddYears(2) });
                 return "";
             }
             else if (type == "jwt")

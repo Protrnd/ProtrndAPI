@@ -36,16 +36,16 @@ namespace ProtrndWebAPI.Services.UserSevice
             return user;
         }
 
-        public async Task<bool> Follow(Profile profile, Guid receiver)
+        public async Task<bool> Follow(TokenClaims profile, Guid receiver)
         {
             if (profile != null)
             {
-                var follow = await _followingsCollection.Find(follow => follow.SenderId == profile.Identifier && follow.ReceiverId == receiver && !profile.Disabled).FirstOrDefaultAsync();
+                var follow = await _followingsCollection.Find(follow => follow.SenderId == profile.ID && follow.ReceiverId == receiver && !profile.Disabled).FirstOrDefaultAsync();
                 if (follow != null)
                     return false;
                 try
                 {
-                    await _followingsCollection.InsertOneAsync(new Followings { SenderId = profile.Identifier, ReceiverId = receiver });
+                    await _followingsCollection.InsertOneAsync(new Followings { SenderId = profile.ID, ReceiverId = receiver });
                     return true;
                 }
                 catch (Exception)
@@ -56,11 +56,11 @@ namespace ProtrndWebAPI.Services.UserSevice
             return false;
         }
 
-        public async Task<bool> UnFollow(Profile profile, Guid receiver)
+        public async Task<bool> UnFollow(TokenClaims profile, Guid receiver)
         {
             if (profile != null)
             {
-                var result = await _followingsCollection.DeleteOneAsync(Builders<Followings>.Filter.Where(f => f.SenderId == profile.Identifier && f.ReceiverId == receiver && !profile.Disabled));
+                var result = await _followingsCollection.DeleteOneAsync(Builders<Followings>.Filter.Where(f => f.SenderId == profile.ID && f.ReceiverId == receiver && !profile.Disabled));
                 return result.DeletedCount > 0;
             }
             return false;

@@ -146,15 +146,15 @@ namespace ProtrndWebAPI.Services
             return updateSuccess.ModifiedCount > 0;
         }
 
-        public async Task<bool> RequestWithdrawalAsync(Profile profile, int total)
+        public async Task<bool> RequestWithdrawalAsync(TokenClaims profile, int total)
         {
             // Modify withdrawal
 
-            int balance = await GetTotalBalance(profile.Identifier);
+            int balance = await GetTotalBalance(profile.ID);
             if (balance <= 100 || total < balance)
                 return false;
 
-            var transaction = new Transaction { Amount = -total, CreatedAt = DateTime.Now, ProfileId = profile.Identifier, Purpose = "Withdraw", TrxRef = Generate().ToString() };
+            var transaction = new Transaction { Amount = -total, CreatedAt = DateTime.Now, ProfileId = profile.ID, Purpose = "Withdraw", TrxRef = Generate().ToString() };
             await _transactionCollection.InsertOneAsync(transaction);
             return true;
         }

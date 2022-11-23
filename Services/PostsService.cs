@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.Posts;
 using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
@@ -28,10 +29,28 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
-        public async Task<bool> PromoteAsync(Profile profile, Promotion promotion)
+        public async Task<List<Promotion>> GetPromotionsPaginatedAsync(int page, TokenClaims profile)
+        {
+            var location = profile.Location.Split(',');
+            //30,000 naira paid means promotion is accessible by every user
+            //location[0] = State
+            //location[1] = City
+            return await _promotionCollection
+                .Find(Builders<Promotion>.Filter
+                .Where(p => p.NextCharge <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience
+                .Where(a => a.State == location[0])
+                .FirstOrDefault() != null || p.Audience
+                .Where(a => a.Cities
+                .Contains(location[1]))
+                .FirstOrDefault() != null))
+                .Skip((page - 1) * 5)
+                .Limit(10).ToListAsync();
+        }
+
+        public async Task<bool> PromoteAsync(TokenClaims profile, Promotion promotion)
         {
             promotion.Identifier = promotion.Id;
-            promotion.ProfileId = profile.Id;
+            promotion.ProfileId = profile.ID;
             try
             {
                 await _promotionCollection.InsertOneAsync(promotion);
@@ -109,7 +128,7 @@ namespace ProtrndWebAPI.Services
             return await _likeCollection.Find(Builders<Like>.Filter.Eq(l => l.UploadId, id)).ToListAsync();
         }
 
-        public async Task<List<Promotion>> GetPromotionsAsync(Profile profile)
+        public async Task<List<Promotion>> GetPromotionsAsync(TokenClaims profile)
         {
             var location = profile.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
@@ -118,15 +137,25 @@ namespace ProtrndWebAPI.Services
             return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.NextCharge <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.State == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
         }
 
-        public async Task<bool> AddLikeAsync(Like like)
+        public async Task<bool> AddLikeAsync(Like likeDto)
         {
-            var liked = await _likeCollection.Find(l => l.SenderId == like.SenderId && l.UploadId == like.UploadId).FirstOrDefaultAsync();
+            var liked = await _likeCollection.Find(l => l.SenderId == likeDto.SenderId && l.UploadId == likeDto.UploadId).FirstOrDefaultAsync();
             if (liked == null)
             {
-                await _likeCollection.InsertOneAsync(like);
+                await _likeCollection.InsertOneAsync(new Like { UploadId = likeDto.UploadId, SenderId = likeDto.SenderId });
                 return true;
             }
             return false;
+        }
+
+        public async Task<bool> IsLikedAsync(LikeDTO likeDto)
+        {
+            var liked = await _likeCollection.Find(l => l.SenderId == likeDto.SenderId && l.UploadId == likeDto.UploadId).FirstOrDefaultAsync();
+            if (liked == null)
+            {
+                return false;
+            }
+            return true;
         }
 
         public async Task<bool> RemoveLike(Guid postId, Guid profileId)

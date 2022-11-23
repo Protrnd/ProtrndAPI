@@ -1,16 +1,14 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace ProtrndWebAPI.Models.User
 {
     public class Register
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        [JsonPropertyName("username")]
-        public string UserName { get; set; } = string.Empty;
         [JsonPropertyName("fullname")]
         public string FullName { get; set; } = string.Empty;
+        [JsonPropertyName("username")]
+        public string UserName { get; set; } = string.Empty;
         [JsonPropertyName("email")]
         public string Email { get; set; } = string.Empty;
         [JsonPropertyName("phash")]

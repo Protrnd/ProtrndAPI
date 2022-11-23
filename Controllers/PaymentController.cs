@@ -31,14 +31,14 @@ namespace ProtrndWebAPI.Controllers
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Cannot buy less than 1 gift" });
             var value = 500 * count;
 
-            var totalBalance = await _paymentService.GetTotalBalance(_profile.Identifier);
+            var totalBalance = await _paymentService.GetTotalBalance(_profileClaims.ID);
             if (totalBalance < 0 && totalBalance <= value)
                 return BadRequest(new ActionResponse { Message = "Error buying gifts" });
 
             var transaction = new Transaction
             {
                 Amount = value,
-                ProfileId = _profile.Identifier,
+                ProfileId = _profileClaims.ID,
                 CreatedAt = DateTime.Now,
                 TrxRef = trxRef,
                 ItemId = Guid.NewGuid(),
@@ -46,7 +46,7 @@ namespace ProtrndWebAPI.Controllers
             };
 
             await _paymentService.InsertTransactionAsync(transaction);
-            await _paymentService.BuyGiftsAsync(_profile.Identifier, count);
+            await _paymentService.BuyGiftsAsync(_profileClaims.ID, count);
             return Ok(new ActionResponse { Successful = true, Data = trxRef, Message = ActionResponseMessage.Ok, StatusCode = 200 });
         }
 
@@ -54,7 +54,7 @@ namespace ProtrndWebAPI.Controllers
         public async Task<ActionResult<ActionResponse>> GetTotalBalance()
         {
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetTotalBalance(_profile.Identifier) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetTotalBalance(_profileClaims.ID) });
         }
 
         [HttpPost("top_up/balance/{total}")]
@@ -64,7 +64,7 @@ namespace ProtrndWebAPI.Controllers
             TransactionInitializeRequest request = new()
             {
                 AmountInKobo = total * 100,
-                Email = _profile.Email,
+                Email = _profileClaims.Email,
                 Reference = Generate().ToString(),
                 Currency = "NGN"
                 //CallbackUrl = ""
@@ -76,7 +76,7 @@ namespace ProtrndWebAPI.Controllers
                 var transaction = new Transaction
                 {
                     Amount = total,
-                    ProfileId = _profile.Identifier,
+                    ProfileId = _profileClaims.ID,
                     CreatedAt = DateTime.Now,
                     TrxRef = request.Reference,
                     ItemId = Guid.NewGuid()
@@ -96,21 +96,21 @@ namespace ProtrndWebAPI.Controllers
             {
                 return BadRequest(new ActionResponse { Message = Constants.InvalidAmount });
             }
-            var totalGifts = await _paymentService.GetTotalGiftsAsync(_profile.Identifier);
+            var totalGifts = await _paymentService.GetTotalGiftsAsync(_profileClaims.ID);
             if (totalGifts < count)
                 return BadRequest(new ActionResponse { Message = "Insufficient Gifts" });
             var post = await _postsService.GetSinglePostAsync(id);
-            if (post == null || !post.AcceptGift || post.ProfileId == _profile.Identifier)
+            if (post == null || !post.AcceptGift || post.ProfileId == _profileClaims.ID)
                 return BadRequest(new ActionResponse { Message = "Error accessing post" });
 
-            var sent = await _postsService.SendGiftToPostAsync(post, count, _profile.Identifier);
+            var sent = await _postsService.SendGiftToPostAsync(post, count, _profileClaims.ID);
             if (sent < 1)
                 return BadRequest(new ActionResponse { Message = "Error sending gift" });
 
             var transaction = new Transaction
             {
                 Amount = count,
-                ProfileId = _profile.Identifier,
+                ProfileId = _profileClaims.ID,
                 CreatedAt = DateTime.Now,
                 TrxRef = Generate().ToString(),
                 ItemId = id,
@@ -118,7 +118,7 @@ namespace ProtrndWebAPI.Controllers
             };
 
             var responseOk = await _paymentService.InsertTransactionAsync(transaction);
-            var notificationSent = await _notificationService.SendGiftNotification(_profile, post, count);
+            var notificationSent = await _notificationService.SendGiftNotification(_profileClaims, post, count);
             if (responseOk && notificationSent)
                 return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = $"{count} {count switch { > 1 => "gifts", < 2 => "gift" }} sent" });
             return BadRequest(new ActionResponse { Message = "Error sending gift" });
@@ -128,7 +128,7 @@ namespace ProtrndWebAPI.Controllers
         public async Task<IActionResult> RequestWithdrawal(int total)
         {
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            var success = await _paymentService.RequestWithdrawalAsync(_profile, total);
+            var success = await _paymentService.RequestWithdrawalAsync(_profileClaims, total);
             if (success)
                 return BadRequest(new ActionResponse { Successful = false, Message = "Error requesting withdrawal" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
@@ -140,7 +140,7 @@ namespace ProtrndWebAPI.Controllers
             TransactionVerifyResponse response = PayStack.Transactions.Verify(promotionTransaction.Reference);
             if (response.Data.Status == "success")
             {
-                if (_profile == null || _postsService == null || _paymentService == null)
+                if (_profileClaims == null || _postsService == null || _paymentService == null)
                     return new ObjectResult(new ActionResponse
                     {
                         Successful = false,
@@ -163,7 +163,7 @@ namespace ProtrndWebAPI.Controllers
                 var transaction = new Transaction
                 {
                     Amount = amount,
-                    ProfileId = _profile.Identifier,
+                    ProfileId = _profileClaims.ID,
                     CreatedAt = DateTime.Now,
                     TrxRef = response.Data.Reference,
                     ItemId = promotionDto.PostId,
@@ -174,11 +174,11 @@ namespace ProtrndWebAPI.Controllers
                 if (verifyStatus)
                 {
                     promotionDto.AuthCode = response.Data.Authorization.AuthorizationCode;
-                    promotionDto.Email = _profile.Email;
+                    promotionDto.Email = _profileClaims.Email;
                     var promotion = new Promotion
                     {
                         CreatedAt = DateTime.Now,
-                        Email = _profile.Email,
+                        Email = _profileClaims.Email,
                         PostId = promotionDto.PostId,
                         Audience = promotionDto.Audience,
                         Amount = amount,
@@ -186,7 +186,7 @@ namespace ProtrndWebAPI.Controllers
                         ChargeIntervals = promotionDto.ChargeIntervals,
                         AuthCode = response.Data.Authorization.AuthorizationCode,
                         BannerUrl = promotionDto.BannerUrl,
-                        ProfileId = _profile.Identifier,
+                        ProfileId = _profileClaims.ID,
                         Categories = promotionDto.Categories
                     };
                     if (promotion.ChargeIntervals == "day")
@@ -196,7 +196,7 @@ namespace ProtrndWebAPI.Controllers
                     if (promotion.ChargeIntervals == "month")
                         promotion.NextCharge = DateTime.Now.AddMonths(1);
                     promotion.Identifier = promotion.Id;
-                    var promotionOk = await _postsService.PromoteAsync(_profile, promotion);
+                    var promotionOk = await _postsService.PromoteAsync(_profileClaims, promotion);
                     if (promotionOk)
                         return Ok(new ActionResponse
                         {
@@ -222,7 +222,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("charge/promotion")]
         public async Task<ActionResult<ActionResponse>> ChargeCard(Promotion promotion)
         {
-            var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = _profile.Email, Amount = (promotion.Amount * 100).ToString() });
+            var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = _profileClaims.Email, Amount = (promotion.Amount * 100).ToString() });
             if (response.Data.Status == "success")
                 return Ok();
             return BadRequest();
@@ -247,7 +247,7 @@ namespace ProtrndWebAPI.Controllers
                 var transaction = new Transaction
                 {
                     Amount = 1500,
-                    ProfileId = _profile.Identifier,
+                    ProfileId = _profileClaims.ID,
                     CreatedAt = DateTime.Now,
                     TrxRef = response.Data.Reference,
                     ItemId = id,
@@ -276,7 +276,7 @@ namespace ProtrndWebAPI.Controllers
                 var transaction = new Transaction
                 {
                     Amount = amount,
-                    ProfileId = _profile.Identifier,
+                    ProfileId = _profileClaims.ID,
                     CreatedAt = DateTime.Now,
                     TrxRef = response.Data.Reference,
                     ItemId = Guid.NewGuid(),

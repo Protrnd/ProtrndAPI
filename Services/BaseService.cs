@@ -23,6 +23,7 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoCollection<Favorite> _favoriteCollection;
         public readonly IMongoCollection<Gift> _giftsCollection;
         public readonly IMongoCollection<AccountDetails> _accountDetailsCollection;
+        public readonly IMongoCollection<Location> _locationCollection;
 
         public BaseService(IOptions<DBSettings> settings)
         {
@@ -42,7 +43,8 @@ namespace ProtrndWebAPI.Services
             _transactionCollection = Database.GetCollection<Transaction>(settings.Value.TransactionsCollection);
             _favoriteCollection = Database.GetCollection<Favorite>(settings.Value.FavoritesCollection);
             _giftsCollection = Database.GetCollection<Gift>(settings.Value.GiftsCollection);
-            _accountDetailsCollection = Database.GetCollection<AccountDetails>(settings.Value.AccountDetailsCollection); 
+            _accountDetailsCollection = Database.GetCollection<AccountDetails>(settings.Value.AccountDetailsCollection);
+            _locationCollection = Database.GetCollection<Location>(settings.Value.LocationCollection);
         }
 
         public static string FormatNumber(int number)

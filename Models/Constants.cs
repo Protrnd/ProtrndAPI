@@ -41,5 +41,6 @@
         public const string NoreplyEmailFrom = "EmailSettings:Address";
         public const string NoreplyEmailConnection = "EmailSettings:Connection";
         public const string NoreplyEmailPass = "EmailSettings:Password";
+        public const string UserName = "username";
     }
 }

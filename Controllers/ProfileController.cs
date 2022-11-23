@@ -13,7 +13,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<ActionResponse>> GetCurrentProfile()
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByIdAsync(_profile.Identifier) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByIdAsync(_profileClaims.ID) });
         }
 
         [HttpGet("get/id/{id}")]
@@ -29,7 +29,8 @@ namespace ProtrndWebAPI.Controllers
         public async Task<ActionResult<ActionResponse>> UpdateProfile([FromBody] ProfileDTO updateProfile)
         {
             var profile = new Profile { FullName = updateProfile.FullName, UserName = updateProfile.UserName };
-            var result = await _profileService.UpdateProfile(_profile, profile);
+            var currentProfile = await GetCurrentProfile();
+            var result = await _profileService.UpdateProfile(currentProfile.Value.Data as Profile, profile);
             if (result == null)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Update failed" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = result });
@@ -38,19 +39,19 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("follow/{id}")]
         public async Task<ActionResult<ActionResponse>> Follow(Guid id)
         {
-            if (id == _profile.Identifier)
+            if (id == _profileClaims.ID)
                 return Forbid();
-            var followOk = await _profileService.Follow(_profile, id);
+            var followOk = await _profileService.Follow(_profileClaims, id);
             if (!followOk)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Follow failed" });
-            await _notificationService.FollowNotification(_profile, id);
+            await _notificationService.FollowNotification(_profileClaims, id);
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Follow successful" });
         }
 
         [HttpDelete("unfollow/{id}")]
         public async Task<ActionResult<ActionResponse>> UnFollow(Guid id)
         {
-            var resultOk = await _profileService.UnFollow(_profile, id);
+            var resultOk = await _profileService.UnFollow(_profileClaims, id);
             if (!resultOk)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Unfollow failed" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Unfollow successful" });
@@ -84,11 +85,11 @@ namespace ProtrndWebAPI.Controllers
         public async Task<IActionResult> GetGiftTotal()
         {
             return NotFound();
-            if (_profile == null)
+            if (_profileClaims == null)
             {
                 return BadRequest(new ActionResponse { StatusCode = 401, Message = "Unauthorized" });
             }
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(_profile.Id) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(_profileClaims.ID) });
         }
       
     }

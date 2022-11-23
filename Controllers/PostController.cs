@@ -25,7 +25,13 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet("get/promotions")]
         public async Task<ActionResult<ActionResponse>> GetPromotions()
         {
-            return Ok(new ActionResponse { Successful = true, Message = ActionResponseMessage.Ok, StatusCode = 200, Data = await _postsService.GetPromotionsAsync(_profile) });
+            return Ok(new ActionResponse { Successful = true, Message = ActionResponseMessage.Ok, StatusCode = 200, Data = await _postsService.GetPromotionsAsync(_profileClaims) });
+        }
+
+        [HttpGet("fetch/promotions/{page}")]
+        public async Task<ActionResult<ActionResponse>> GetPromotionsPaginated(int page)
+        {
+            return Ok(new ActionResponse { Successful = true, Message = $"Promotions results for page {page}", StatusCode = 200, Data = await _postsService.GetPromotionsPaginatedAsync(page, _profileClaims) });
         }
 
         [HttpGet("get/{id}/gift/profiles")]
@@ -38,7 +44,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)
         {
-            var post = new Post { AcceptGift = false, Category = upload.Category, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profile.Identifier };
+            var post = new Post { AcceptGift = false, Category = upload.Category, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profileClaims.ID };
             var uploadResult = await _postsService.AddPostAsync(post);
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = uploadResult });
         }
@@ -64,19 +70,25 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetPostLikesAsync(id) });
         }
 
-        [HttpPost("add/like/{id}")]
+        [HttpPost("like/{id}")]
         public async Task<ActionResult<ActionResponse>> AddLike(Guid id)
         {
             var post = await _postsService.GetSinglePostAsync(id);
             if (post != null)
             {
-                var like = new Like { SenderId = _profile.Identifier, Time = DateTime.Now, UploadId = id };
+                var like = new Like { SenderId = _profileClaims.ID, Time = DateTime.Now, UploadId = id };
                 var liked = await _postsService.AddLikeAsync(like);
-                var notiSent = await _notificationService.LikeNotification(_profile, post.ProfileId);
+                var notiSent = await _notificationService.LikeNotification(_profileClaims, post.ProfileId);
                 if (liked && notiSent)
                     return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
             }
             return NotFound(new ActionResponse { Message = ActionResponseMessage.BadRequest });
+        }
+
+        [HttpGet("is-liked/{id}")]
+        public async Task<ActionResult<ActionResponse>> GetIsLiked(Guid id)
+        {
+            return Ok(new ActionResponse { Successful = true, Message = "Result Ok", StatusCode = 200, Data = await _postsService.IsLikedAsync(new LikeDTO { SenderId = _profileClaims.ID, UploadId = id }) });
         }
 
         [HttpDelete("delete/like/{id}")]
@@ -85,7 +97,7 @@ namespace ProtrndWebAPI.Controllers
             var post = await _postsService.GetSinglePostAsync(id);
             if (post != null)
             {
-                var liked = await _postsService.RemoveLike(id, _profile.Identifier);
+                var liked = await _postsService.RemoveLike(id, _profileClaims.ID);
                 if (liked)
                     return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
             }
@@ -104,9 +116,9 @@ namespace ProtrndWebAPI.Controllers
             var post = await _postsService.GetSinglePostAsync(commentDTO.PostId);
             if (post != null)
             {
-                var comment = new Comment { UserId = _profile.Id, PostId = commentDTO.PostId, CommentContent = commentDTO.CommentContent };
+                var comment = new Comment { UserId = _profileClaims.ID, PostId = commentDTO.PostId, CommentContent = commentDTO.CommentContent };
                 comment.Identifier = comment.Id;
-                await _notificationService.CommentNotification(_profile, post.ProfileId);
+                await _notificationService.CommentNotification(_profileClaims, post.ProfileId);
                 var commentResult = await _postsService.InsertCommentAsync(comment);
                 return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = commentResult });
             }
@@ -129,7 +141,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<ActionResult<ActionResponse>> DeletePost(Guid id)
         {
-            var delete = await _postsService.DeletePostAsync(id, _profile.Identifier);
+            var delete = await _postsService.DeletePostAsync(id, _profileClaims.ID);
             if (!delete)
                 return BadRequest(new ActionResponse { Message = ActionResponseMessage.BadRequest });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });

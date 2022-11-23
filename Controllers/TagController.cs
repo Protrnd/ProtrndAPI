@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Tag = ProtrndWebAPI.Models.Posts.Tag;
 using ProtrndWebAPI.Services.Network;
 
 namespace ProtrndWebAPI.Controllers

@@ -15,12 +15,12 @@ namespace ProtrndWebAPI.Services
             return;
         }
 
-        public async Task<bool> FollowNotification(Profile sender, Guid receiverId)
+        public async Task<bool> FollowNotification(TokenClaims sender, Guid receiverId)
         {
             try
             {
                 var message = sender.UserName + Constants.StartedFollowing;
-                await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, receiverId, message));
+                await _notificationsCollection.InsertOneAsync(Notification(sender.ID, receiverId, message));
                 return true;
             }
             catch (Exception)
@@ -29,12 +29,12 @@ namespace ProtrndWebAPI.Services
             }
         }
 
-        public async Task<bool> LikeNotification(Profile sender, Guid receiverId)
+        public async Task<bool> LikeNotification(TokenClaims sender, Guid receiverId)
         {
             try
             {
                 var message = sender.UserName + Constants.Liked;
-                await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, receiverId, message));
+                await _notificationsCollection.InsertOneAsync(Notification(sender.ID, receiverId, message));
                 return true;
             }
             catch (Exception)
@@ -44,10 +44,10 @@ namespace ProtrndWebAPI.Services
             }
         }
 
-        public async Task CommentNotification(Profile sender, Guid receiverId)
+        public async Task CommentNotification(TokenClaims sender, Guid receiverId)
         {
             var message = sender.UserName + Constants.Commented;
-            await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, receiverId, message));
+            await _notificationsCollection.InsertOneAsync(Notification(sender.ID, receiverId, message));
             return;
         }
 
@@ -58,12 +58,12 @@ namespace ProtrndWebAPI.Services
             return;
         }
 
-        public async Task<bool> SendGiftNotification(Profile sender, Post post, long count)
+        public async Task<bool> SendGiftNotification(TokenClaims sender, Post post, long count)
         {
             try
             {
                 var message = sender.UserName + $" sent {count} gift to your post: " + post.Identifier;
-                await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, post.ProfileId, message));
+                await _notificationsCollection.InsertOneAsync(Notification(sender.ID, post.ProfileId, message));
                 return true;
             }
             catch (Exception)

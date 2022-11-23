@@ -14,7 +14,7 @@ namespace ProtrndWebAPI.Services.Network
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
-            if (context.HttpContext.RequestServices.GetService(typeof(IUserService)) is not IUserService isAuthenticated || isAuthenticated.GetProfile() == null)
+            if (context.HttpContext.RequestServices.GetService(typeof(IUserService)) is not IUserService isAuthenticated || isAuthenticated.GetProfileTokenClaims() == null)
             {
                 context.Result = new UnauthorizedObjectResult(new ActionResponse { StatusCode = 401, Message = "User is unauthorized" });
                 return;
