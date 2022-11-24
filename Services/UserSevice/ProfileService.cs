@@ -18,6 +18,11 @@ namespace ProtrndWebAPI.Services.UserSevice
             return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName == name && !profile.Disabled)).FirstOrDefaultAsync();
         }
 
+        public async Task<List<Profile>> GetProfilesByNameAsync(string name)
+        {
+            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName == name  || profile.UserName.StartsWith(name) || profile.UserName.Contains(name) && !profile.Disabled)).ToListAsync();
+        }
+
         public async Task<Profile?> UpdateProfile(Profile user, Profile profile)
         {
             var profileName = await GetProfileByNameAsync(profile.UserName);

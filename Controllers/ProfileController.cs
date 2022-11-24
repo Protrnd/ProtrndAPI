@@ -16,10 +16,19 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByIdAsync(_profileClaims.ID) });
         }
 
-        [HttpGet("get/id/{id}")]
+        [HttpGet("{id}")]
         public async Task<ActionResult<ActionResponse>> GetProfileById(Guid id)
         {
             var profile = await _profileService.GetProfileByIdAsync(id);
+            if (profile == null)
+                return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = profile });
+        }
+
+        [HttpGet("name/{name}")]
+        public async Task<ActionResult<ActionResponse>> GetProfileByUsername(string name)
+        {
+            var profile = await _profileService.GetProfilesByNameAsync(name);
             if (profile == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = profile });
@@ -57,31 +66,31 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Unfollow successful" });
         }       
 
-        [HttpGet("get/followers/{id}")]
+        [HttpGet("followers/{id}")]
         public async Task<ActionResult<ActionResponse>> GetFollowers(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(id) });
         }
 
-        [HttpGet("get/followings/{id}")]
+        [HttpGet("followings/{id}")]
         public async Task<ActionResult<ActionResponse>> GetFollowings(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowings(id) });
         }        
 
-        [HttpGet("get/followers/{id}/count")]
+        [HttpGet("followers/{id}/count")]
         public async Task<ActionResult<ActionResponse>> GetFollowerCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(id) });
         }        
 
-        [HttpGet("get/followings/{id}/count")]
+        [HttpGet("followings/{id}/count")]
         public async Task<ActionResult<ActionResponse>> GetFollowingCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(id) });
         }        
 
-        [HttpGet("get/gifts/total")]
+        [HttpGet("gifts/total")]
         public async Task<IActionResult> GetGiftTotal()
         {
             return NotFound();
