@@ -28,7 +28,6 @@ builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConne
 builder.Services.AddSingleton<RegistrationService>();
 builder.Services.AddSingleton<PostsService>();
 builder.Services.AddSingleton<ProfileService>();
-builder.Services.AddSingleton<CategoriesService>();
 builder.Services.AddSingleton<SearchService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<NotificationService>();

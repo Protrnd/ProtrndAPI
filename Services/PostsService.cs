@@ -214,10 +214,5 @@ namespace ProtrndWebAPI.Services
             }
             return false;
         }
-
-        public async Task<List<Post>> GetPostsInCategoryAsync(string category)
-        {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.Category.Contains(category))).ToListAsync();
-        }    
     }
 }

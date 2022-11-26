@@ -15,8 +15,6 @@ namespace ProtrndWebAPI.Models.Posts
         public List<string>? UploadUrls { get; set; } = null;
         [JsonPropertyName("location")]
         public Location Location { get; set; } = null!;
-        [JsonPropertyName("category")]
-        public List<string> Category { get; set; } = new List<string>();
         [JsonPropertyName("acceptgift")]
         public bool AcceptGift { get; set; } = false;
         [JsonPropertyName("disabled")]

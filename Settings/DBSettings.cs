@@ -11,7 +11,6 @@
         public string PromotionsCollection { get; set; } = null!;
         public string ProfilesCollection { get; set; } = null!;
         public string ChatsCollection { get; set; } = null!;
-        public string CategoriesCollection { get; set; } = null!;
         public string TagsCollection { get; set; } = null!;
         public string FollowingsCollection { get; set; } = null!;
         public string NotificationsCollection { get; set; } = null!;

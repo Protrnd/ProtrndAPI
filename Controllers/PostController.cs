@@ -44,7 +44,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)
         {
-            var post = new Post { AcceptGift = false, Category = upload.Category, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profileClaims.ID };
+            var post = new Post { AcceptGift = false, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profileClaims.ID };
             var uploadResult = await _postsService.AddPostAsync(post);
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = uploadResult });
         }

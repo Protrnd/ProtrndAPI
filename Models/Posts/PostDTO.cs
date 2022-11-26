@@ -14,8 +14,5 @@ namespace ProtrndWebAPI.Models.Posts
 
         [JsonPropertyName("location")]
         public Location Location { get; set; } = null!;
-
-        [JsonPropertyName("category")]
-        public List<string> Category { get; set; } = new List<string>();
     }
 }
