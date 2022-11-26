@@ -33,11 +33,5 @@ namespace ProtrndWebAPI.Controllers
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _searchService.SearchProfilesByEmailAsync(email.ToLower()) });
         }
-
-        [HttpGet("category/{name}")]
-        public async Task<ActionResult<List<string>>> GetPostsInCategory(string name)
-        {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _searchService.SearchPostsByCategoryAsync(name) });
-        }
     }
 }

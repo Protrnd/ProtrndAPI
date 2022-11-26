@@ -23,24 +23,13 @@ namespace ProtrndWebAPI.Services
                 peopleCount = "0";
             else
                 peopleCount = FormatNumber(people.Count);
-            var category = await SearchPostsByCategoryAsync(search);
-            string? categoryCount;
-            if (category == null)
-                categoryCount = "0";
-            else
-                categoryCount = FormatNumber(category.Count);
 
-            return new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = new List<List<string>> { SearchCountResult(postsCount, "Posts"), SearchCountResult(peopleCount, "People"), SearchCountResult(categoryCount, "Category") } };
+            return new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = new List<List<string>> { SearchCountResult(postsCount, "Posts"), SearchCountResult(peopleCount, "People") } };
         }
 
         public async Task<List<Post>> SearchPostsByNameAsync(string name)
         {
             return await _postsCollection.Find(Builders<Post>.Filter.Where(post => post.Caption.ToLower().Contains(name.ToLower()))).ToListAsync();
-        }
-
-        public async Task<List<Post>> SearchPostsByCategoryAsync(string category)
-        {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(post => post.Category.Contains(category.ToLower()))).ToListAsync();
         }
 
         public async Task<List<Profile>> SearchProfilesByNameAsync(string name)

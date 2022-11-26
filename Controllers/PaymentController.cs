@@ -228,14 +228,14 @@ namespace ProtrndWebAPI.Controllers
             return BadRequest();
         }
 
-        [HttpPost("link/account")]
-        public async Task<ActionResult<ActionResponse>> LinkAccount(AccountDetailsDTO accountDetailsDTO)
-        {
-            var accountLinked = await _paymentService.AddAccountDetailsAsync(accountDetailsDTO, accountToken);
-            if (accountLinked == null)
-                return BadRequest(new ActionResponse { Data = null, StatusCode = 400, Successful = false, Message = "Account Linking failed" });
-            return Ok(new ActionResponse { Data = accountLinked, StatusCode = 200, Successful = true, Message = "Account Linked Successfully" });
-        }
+        //[HttpPost("link/account")]
+        //public async Task<ActionResult<ActionResponse>> LinkAccount(AccountDetailsDTO accountDetailsDTO)
+        //{
+        //    var accountLinked = await _paymentService.AddAccountDetailsAsync(accountDetailsDTO, accountToken);
+        //    if (accountLinked == null)
+        //        return BadRequest(new ActionResponse { Data = null, StatusCode = 400, Successful = false, Message = "Account Linking failed" });
+        //    return Ok(new ActionResponse { Data = accountLinked, StatusCode = 200, Successful = true, Message = "Account Linked Successfully" });
+        //}
 
         [HttpPost("verify/accept_gift/{id}/{reference}")]
         public async Task<ActionResult<ActionResponse>> VerifyAcceptGift(Guid id, string reference)

@@ -26,7 +26,7 @@ namespace ProtrndWebAPI.Services.UserSevice
         public async Task<Profile?> UpdateProfile(Profile user, Profile profile)
         {
             var profileName = await GetProfileByNameAsync(profile.UserName);
-            if (profile.UserName.Contains(' ') || profileName != null)
+            if (profile.UserName != user.UserName && profileName != null)
                 return null;
             user.UserName = profile.UserName;
             user.FullName = profile.FullName;

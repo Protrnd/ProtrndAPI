@@ -6,7 +6,6 @@ namespace ProtrndWebAPI.Controllers
     public class BaseController : Controller
     {
         public readonly NotificationService? _notificationService;
-        public readonly CategoriesService? _categoriesService;
         public readonly RegistrationService? _regService;
         public readonly ProfileService? _profileService;
         public readonly SearchService? _searchService;
@@ -22,7 +21,6 @@ namespace ProtrndWebAPI.Controllers
             _locationService = serviceProvider.GetService<LocationService>();
             _regService = serviceProvider.GetService<RegistrationService>();
             _userService = serviceProvider.GetService<IUserService>();
-            _categoriesService = serviceProvider.GetService<CategoriesService>();
             _notificationService = serviceProvider.GetService<NotificationService>();
             _postsService = serviceProvider.GetService<PostsService>();
             _profileService = serviceProvider.GetService<ProfileService>();

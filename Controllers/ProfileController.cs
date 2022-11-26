@@ -37,9 +37,17 @@ namespace ProtrndWebAPI.Controllers
         [HttpPut("update")]
         public async Task<ActionResult<ActionResponse>> UpdateProfile([FromBody] ProfileDTO updateProfile)
         {
-            var profile = new Profile { FullName = updateProfile.FullName, UserName = updateProfile.UserName };
-            var currentProfile = await GetCurrentProfile();
-            var result = await _profileService.UpdateProfile(currentProfile.Value.Data as Profile, profile);
+            var profile = new Profile
+            {
+                FullName = updateProfile.FullName,
+                UserName = updateProfile.UserName,
+                BackgroundImageUrl = updateProfile.BackgroundImageUrl,
+                ProfileImage = updateProfile.ProfileImage,
+                Phone = updateProfile.Phone,
+                Location = updateProfile.Location
+            };
+            var currentProfile = await _profileService.GetProfileByIdAsync(_profileClaims.ID);
+            var result = await _profileService.UpdateProfile(currentProfile, profile);
             if (result == null)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Update failed" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = result });
