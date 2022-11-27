@@ -80,6 +80,12 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(id) });
         }
 
+        [HttpGet("is-following/{id}")]
+        public async Task<ActionResult<ActionResponse>> IsFollowing(Guid id)
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.IsFollowing(_profileClaims.ID, id) });
+        }
+
         [HttpGet("followings/{id}")]
         public async Task<ActionResult<ActionResponse>> GetFollowings(Guid id)
         {

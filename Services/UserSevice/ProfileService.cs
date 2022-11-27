@@ -100,6 +100,12 @@ namespace ProtrndWebAPI.Services.UserSevice
             return followingProfiles;
         }
 
+        public async Task<bool> IsFollowing(Guid currentUserId, Guid id)
+        {
+            var isFollowing = await _followingsCollection.Find(Builders<Followings>.Filter.Where(f => f.SenderId == currentUserId && f.ReceiverId == id)).SingleOrDefaultAsync();
+            return isFollowing != null;
+        }
+
         public async Task<string> GetFollowerCount(Guid id)
         {
             var followers = await GetFollowersAsync(id);
