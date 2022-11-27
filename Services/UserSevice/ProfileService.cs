@@ -75,7 +75,6 @@ namespace ProtrndWebAPI.Services.UserSevice
         public async Task<List<Profile>> GetFollowersAsync(Guid id)
         {
             var followers = await _followingsCollection.Find(f => f.ReceiverId == id).ToListAsync();
-
             var followerProfiles = new List<Profile>();
             foreach (var follower in followers)
             {
@@ -105,7 +104,7 @@ namespace ProtrndWebAPI.Services.UserSevice
         {
             var followers = await GetFollowersAsync(id);
             if (followers != null)
-                return FormatNumber(followers.Count);
+                return followers.Count.ToString();
             return "0";
         }
 
@@ -113,7 +112,7 @@ namespace ProtrndWebAPI.Services.UserSevice
         {
             var followings = await GetFollowings(id);
             if (followings != null)
-                return FormatNumber(followings.Count);
+                return followings.Count.ToString();
             return "0";
         }
     }
