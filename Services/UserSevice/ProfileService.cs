@@ -33,6 +33,7 @@ namespace ProtrndWebAPI.Services.UserSevice
             user.Location = profile.Location;
             user.Phone = profile.Phone;
             user.BackgroundImageUrl = profile.BackgroundImageUrl;
+            user.ProfileImage = profile.ProfileImage;
 
             var filter = Builders<Profile>.Filter.Eq(p => p.Identifier, user.Identifier);
             var updateQueryResult = await _profileCollection.ReplaceOneAsync(filter, user);
