@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using ProtrndWebAPI.Services.Network;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProtrndWebAPI.Controllers
 {
@@ -10,10 +12,10 @@ namespace ProtrndWebAPI.Controllers
     {
         public NotificationController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
-        [HttpGet("get/{id}")]
-        public async Task<ActionResult<ActionResponse>> GetNotifications(Guid id)
+        [HttpGet("fetch/{page}")]
+        public async Task<ActionResult<ActionResponse>> GetNotifications(int page)
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _notificationService.GetNotificationsAsync(id) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _notificationService.GetNotificationsAsync(_profileClaims.ID, page) });
         }
 
         [HttpPut("set/viewed/{id}")]

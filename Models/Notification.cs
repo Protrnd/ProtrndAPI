@@ -10,6 +10,10 @@ namespace ProtrndWebAPI.Models
         public Guid ReceiverId { get; set; }
         [JsonPropertyName("senderid")]
         public Guid SenderId { get; set; } = Guid.Empty;
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+        [JsonPropertyName("item_id")]
+        public Guid ItemId { get; set; }
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
         [JsonPropertyName("viewed")]

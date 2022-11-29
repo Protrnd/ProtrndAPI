@@ -78,9 +78,11 @@ namespace ProtrndWebAPI.Controllers
             {
                 var like = new Like { SenderId = _profileClaims.ID, Time = DateTime.Now, UploadId = id };
                 var liked = await _postsService.AddLikeAsync(like);
-                var notiSent = await _notificationService.LikeNotification(_profileClaims, post.ProfileId);
-                if (liked && notiSent)
+                if (liked)
+                {
+                    await _notificationService.LikeNotification(_profileClaims, post.ProfileId, post.Identifier);
                     return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = true });
+                }
             }
             return NotFound(new ActionResponse { Message = ActionResponseMessage.BadRequest });
         }
@@ -118,7 +120,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 var comment = new Comment { UserId = _profileClaims.ID, PostId = commentDTO.PostId, CommentContent = commentDTO.CommentContent };
                 comment.Identifier = comment.Id;
-                await _notificationService.CommentNotification(_profileClaims, post.ProfileId);
+                await _notificationService.CommentNotification(_profileClaims, post.ProfileId, post.Identifier);
                 var commentResult = await _postsService.InsertCommentAsync(comment);
                 return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = commentResult });
             }
