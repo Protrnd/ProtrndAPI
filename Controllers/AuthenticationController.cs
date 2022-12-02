@@ -249,9 +249,9 @@ namespace ProtrndWebAPI.Controllers
 
         private string getMailBodyTemplate(int otp)
         {
-            //var root = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)).Replace("\\bin\\Debug\\net6.0", "");
-            //using StreamReader reader = new(root + @"\StaticFiles\emailtemplate.html");
-            string? body = $"Your otp is {otp}";
+            var root = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)).Replace("\\bin\\Debug\\net6.0", "");
+            using StreamReader reader = new(root + @"\StaticFiles\emailtemplate.html");
+            string? body = reader.ReadToEnd();
             body = body.Replace("{otpvalue}", otp.ToString());
             return body;
         }
