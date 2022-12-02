@@ -130,7 +130,7 @@ namespace ProtrndWebAPI.Controllers
             email.To.Add(MailboxAddress.Parse(to));
             email.Subject = "Your ProTrnd One-Time-Password";
             var otp = GenerateOTP();
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your OTP is {otp}" };
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = getMailBodyTemplate(otp) };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);
@@ -245,6 +245,15 @@ namespace ProtrndWebAPI.Controllers
         {
             var r = new Random();
             return r.Next(1000, 9999);
+        }
+
+        private string getMailBodyTemplate(int otp)
+        {
+            var body = string.Empty;
+            var dir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            System.IO.File.ReadAllText(@"./StaticFiles/emailtemplate.html");
+            body = body.Replace("{otpvalue}",otp.ToString());
+            return body;
         }
     }
 }
