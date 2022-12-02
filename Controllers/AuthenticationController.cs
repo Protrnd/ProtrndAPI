@@ -249,10 +249,10 @@ namespace ProtrndWebAPI.Controllers
 
         private string getMailBodyTemplate(int otp)
         {
-            var body = string.Empty;
-            var dir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            System.IO.File.ReadAllText(@"./StaticFiles/emailtemplate.html");
-            body = body.Replace("{otpvalue}",otp.ToString());
+            var root = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)).Replace("\\bin\\Debug\\net6.0", "");
+            using StreamReader reader = new(root + @"\StaticFiles\emailtemplate.html");
+            string? body = reader.ReadToEnd();
+            body = body.Replace("{otpvalue}", otp.ToString());
             return body;
         }
     }
