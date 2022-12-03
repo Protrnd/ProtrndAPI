@@ -21,6 +21,9 @@ builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
     builder.SetIsOriginAllowed(host => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
 }));
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var url = $"http://0.0.0.0:{port}";
+
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -107,4 +110,4 @@ app.MapControllers();
 
 app.MapDefaultControllerRoute();
 
-app.Run();
+app.Run(url);

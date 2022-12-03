@@ -10,11 +10,10 @@
         * {
             font-family: Arial, Helvetica, sans-serif;
         }
+
         body {
-            width: 100%;
+            /* width: 100%; */
             height: auto;
-        }
-        .container {
             background-color: #d2d5e0;
             width: 100%;
             height: 100%;
@@ -23,6 +22,18 @@
             justify-content: center;
             flex-direction: column;
         }
+
+        /* .container{
+            background-color: #d2d5e0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+
+        } */
+
         .content {
             background-color: white;
             width: 450px;
@@ -31,6 +42,7 @@
             border-radius: 0.5rem;
             padding: 20px;
         }
+
         .discription {
             line-height: 1.5rem;
             font-size: 15px;
@@ -42,19 +54,22 @@
             align-items: center;
             justify-content: space-between;
         }
-        .nav > a {
-            text-decoration: none;
-            color: #423f3f;
-            font-weight: bold;
-            border: 2px solid #423f3f;
-            padding: 15px;
-            border-radius: 0.5rem;
-        }
+
+            .nav > a {
+                text-decoration: none;
+                color: #423f3f;
+                font-weight: bold;
+                border: 2px solid #423f3f;
+                padding: 15px;
+                border-radius: 0.5rem;
+            }
+
         .top-description {
             font-weight: 100;
             word-spacing: 0.2rem;
             color: rgb(61, 59, 59);
         }
+
         .otp {
             width: 100%;
             background-color: #d2d5e0;
@@ -83,43 +98,43 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="content">
-            <div class="nav">
-                <img src="logo.png" alt="" class="logo">
+    <!-- <p class="container"> -->
+    <div class="content">
+        <div class="nav">
+            <img src="logo.png" alt="" class="logo">
 
-                <a href="http://protrnd.com/">Go to Protrnd </a>
-            </div>
-            <h1 class="heading">
-                Complete registraion
-            </h1>
-
-            <p class="discription top-description">
-                To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.
-                enter this verification code to get started on Protrnd:
-            </p>
-
-
-            <p class="otp">
-                {otpvalue}
-            </p>
-
-            <p class="discription">
-                if you did'nt create an account with Protrend, please ignore this message. this OTP will be valid for 2hours
-            </p>
-            <span class="discription">
-                Thanks,
-            </span>
-            <br>
-            <span class="discription">
-                Protrnd
-            </span>
+            <a href="http://protrnd.com/">Go to Protrnd </a>
         </div>
+        <h1 class="heading">
+            Complete registraion
+        </h1>
 
-        <span class="why">
-            You have received this notification because you have signed up fo an account with Protrnd
+        <p class="discription top-description">
+            To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.
+            enter this verification code to get started on Protrnd:
+        </p>
+
+
+        <p class="otp">
+            2022
+        </p>
+
+        <p class="discription">
+            if you did'nt create an account with Protrend, please ignore this message. this OTP will be valid for 2hours
+        </p>
+        <span class="discription">
+            Thanks,
         </span>
-
+        <br>
+        <span class="discription">
+            Protrnd
+        </span>
     </div>
+
+    <span class="why">
+        You have received this notification because you have signed up fo an account with Protrnd
+    </span>
+
+    <!-- </p> -->
 </body>
 </html>
