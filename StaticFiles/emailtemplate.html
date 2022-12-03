@@ -7,13 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protrnd</title>
     <style>
-        * {
-            font-family: Arial, Helvetica, sans-serif;
+        *{
+            font-family:Arial, Helvetica, sans-serif;
         }
 
-        body {
+        body{
             /* width: 100%; */
             height: auto;
+
             background-color: #d2d5e0;
             width: 100%;
             height: 100%;
@@ -34,7 +35,7 @@
 
         } */
 
-        .content {
+        .content{
             background-color: white;
             width: 450px;
             margin-top: 20px;
@@ -43,34 +44,35 @@
             padding: 20px;
         }
 
-        .discription {
+        .discription{
             line-height: 1.5rem;
             font-size: 15px;
             color: rgb(61, 59, 59);
+            
         }
 
-        .nav {
+        .nav{
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-            .nav > a {
-                text-decoration: none;
-                color: #423f3f;
-                font-weight: bold;
-                border: 2px solid #423f3f;
-                padding: 15px;
-                border-radius: 0.5rem;
-            }
+        .nav > a{
+            text-decoration: none;
+            color: #423f3f;
+            font-weight: bold;
+            border: 2px solid #423f3f;
+            padding: 15px;
+            border-radius: 0.5rem;
+        }
 
-        .top-description {
+        .top-description{
             font-weight: 100;
             word-spacing: 0.2rem;
             color: rgb(61, 59, 59);
         }
 
-        .otp {
+        .otp{
             width: 100%;
             background-color: #d2d5e0;
             padding-top: 30px;
@@ -83,11 +85,11 @@
         }
 
 
-        .logo {
+        .logo{
             width: 40px;
         }
 
-        .why {
+        .why{
             width: 400px;
             text-align: center;
             font-size: 12px;
@@ -95,46 +97,47 @@
             font-weight: 600;
             margin-bottom: 20px;
         }
+
     </style>
 </head>
 <body>
     <!-- <p class="container"> -->
-    <div class="content">
-        <div class="nav">
-            <img src="logo.png" alt="" class="logo">
+        <div class="content">
+            <div class="nav">
+                <img src="logo.png" alt="" class="logo">
 
-            <a href="http://protrnd.com/">Go to Protrnd </a>
+                <a href="http://protrnd.com/">Go to Protrnd </a>
+            </div>
+            <h1 class="heading">
+                Complete registraion
+            </h1>
+            
+            <p class="discription top-description">
+                To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.
+                 enter this verification code to get started on Protrnd:
+            </p>
+    
+            
+            <p class="otp">
+                {otpvalue}
+            </p>
+            
+            <p class="discription">
+                if you did'nt create an account with Protrend, please ignore this message. this OTP will be valid for 2hours
+            </p>
+            <span class="discription">
+                Thanks,
+            </span>
+                <br>
+            <span class="discription">
+                Protrnd
+            </span>
         </div>
-        <h1 class="heading">
-            Complete registraion
-        </h1>
 
-        <p class="discription top-description">
-            To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.
-            enter this verification code to get started on Protrnd:
-        </p>
-
-
-        <p class="otp">
-            2022
-        </p>
-
-        <p class="discription">
-            if you did'nt create an account with Protrend, please ignore this message. this OTP will be valid for 2hours
-        </p>
-        <span class="discription">
-            Thanks,
+        <span class="why">
+            You have received this notification because you have signed up fo an account with Protrnd
         </span>
-        <br>
-        <span class="discription">
-            Protrnd
-        </span>
-    </div>
-
-    <span class="why">
-        You have received this notification because you have signed up fo an account with Protrnd
-    </span>
-
+        
     <!-- </p> -->
 </body>
 </html>
