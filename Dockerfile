@@ -1,15 +1,15 @@
-﻿# Build Stage
-FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
-WORKDIR /source
-COPY . .
-RUN dotnet restore "./ProtrndWebAPI/ProtrndWebAPI.csproj" --disable-parallel
-RUN dotnet publish "./ProtrndWebAPI/ProtrndWebAPI.csproj" -c release -o /app --no-restore
+﻿FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
-# Server Stage
-FROM mcr.microsoft.com/dotnet/sdk:6.0-focal
+COPY ./ProtrndWebAPI/ProtrndWebAPI.csproj ./ProtrndWebAPI/ProtrndWebAPI.csproj
+COPY *.sln ./
+RUN dotnet restore
+
+COPY . ./
+RUN dotnet publish -c Release -o build --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
-COPY --from=build /app ./
-
-EXPOSE 5000
-
-ENTRYPOINT ["dotnet", "PreotrndWebAPI.API.dll"]
+COPY --from=build ./build .
+ENV ASPNETCORE_URLS=http://*:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "ProtrndWebAPI"]
