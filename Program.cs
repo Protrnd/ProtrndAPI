@@ -14,6 +14,7 @@ using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
@@ -78,6 +79,8 @@ builder.Services.AddAuthentication(options =>
             return JwtBearerDefaults.AuthenticationScheme;
         };
     });
+
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 var app = builder.Build();
 
