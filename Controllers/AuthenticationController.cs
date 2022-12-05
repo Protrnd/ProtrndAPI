@@ -138,13 +138,12 @@ namespace ProtrndWebAPI.Controllers
             try
             {
                 smtp.Send(email);
-                smtp.Disconnect(true);
-            }
-            catch (Exception e)
-            {
                 return otp;
             }
-            return 0;
+            catch (Exception)
+            {
+                return 0;
+            }
         }
 
         [HttpPost("verify/otp")]
