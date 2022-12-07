@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Models.Posts;
@@ -24,7 +25,9 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetPagePostsAsync(int page)
         {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled)).Skip((page - 1) * 10)
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled))
+                .SortByDescending(b => b.Time)
+                .Skip((page - 1) * 10)
                 .Limit(10)
                 .ToListAsync();
         }

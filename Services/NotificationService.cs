@@ -76,6 +76,7 @@ namespace ProtrndWebAPI.Services
         public async Task<List<Notification>> GetNotificationsAsync(Guid id, int page)
         {
             return await _notificationsCollection.Find(Builders<Notification>.Filter.Where(n => n.ReceiverId == id)).SortBy(n => n.Time).Skip((page - 1) * 20)
+                .SortByDescending(n => n.Time)
                 .Limit(20)
                 .ToListAsync();
         }
