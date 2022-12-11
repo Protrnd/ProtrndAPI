@@ -28,7 +28,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet("fetch/{name}")]
         public async Task<ActionResult<ActionResponse>> GetProfileByUsername(string name)
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByNameAsync(name) };
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByNameAsync(name) });
         }
 
         [HttpGet("name/{name}")]
