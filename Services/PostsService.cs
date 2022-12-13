@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
@@ -28,6 +29,15 @@ namespace ProtrndWebAPI.Services
             return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled))
                 .SortByDescending(b => b.Time)
                 .Skip((page - 1) * 10)
+                .Limit(10)
+                .ToListAsync();
+        }
+
+        public async Task<List<Post>> GetPostQuery(PostQuery query)
+        {
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled && p.Caption.Contains(query.Word)))
+                .SortByDescending(b => b.Time)
+                .Skip((query.Page - 1) * 10)
                 .Limit(10)
                 .ToListAsync();
         }
