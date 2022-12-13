@@ -28,6 +28,12 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = $"Posts results", StatusCode = 200, Data = await _postsService.GetPostQuery(query) });
         }
 
+        [HttpGet("fetch/query/{word}/count")]
+        public async Task<ActionResult<ActionResponse>> GetQueryCount(string word)
+        {
+            return Ok(new ActionResponse { Successful = true, Message ="Result OK", StatusCode = 200, Data = await _postsService.GetQueryCount(word) });
+        }
+
         [HttpGet("get/promotions")]
         public async Task<ActionResult<ActionResponse>> GetPromotions()
         {

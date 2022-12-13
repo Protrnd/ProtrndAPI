@@ -42,6 +42,12 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<long> GetQueryCount(string word)
+        {
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled & p.Caption.Contains(word)))
+                .CountDocumentsAsync();
+        }
+
         public async Task<List<Promotion>> GetPromotionsPaginatedAsync(int page, TokenClaims profile)
         {
             var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
