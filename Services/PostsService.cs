@@ -218,7 +218,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetUserPostsAsync(Guid userId)
         {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.ProfileId == userId && !p.Disabled)).SortBy(p => p.Time).ToListAsync();
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.ProfileId == userId && !p.Disabled)).SortBy(p => p.Time).SortByDescending(b => b.Time).ToListAsync();
         }
 
         public async Task<bool> DeletePostAsync(Guid postId, Guid profileId)
