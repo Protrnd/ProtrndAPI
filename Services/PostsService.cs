@@ -205,7 +205,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Comment>> GetCommentsAsync(Guid id)
         {
-            return await _commentCollection.Find(Builders<Comment>.Filter.Eq<Guid>(c => c.PostId, id)).ToListAsync();
+            return await _commentCollection.Find(Builders<Comment>.Filter.Eq<Guid>(c => c.PostId, id)).SortBy(c => c.Time).SortByDescending(c => c.Time).ToListAsync();
         }
 
         public async Task<Post?> GetSinglePostAsync(Guid id)
