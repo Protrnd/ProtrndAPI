@@ -14,7 +14,6 @@ using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
@@ -65,8 +64,8 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
-        ValidateIssuer = false, //change to true 
-        ValidateAudience = false, //change to true
+        ValidateIssuer = true, //change to true 
+        ValidateAudience = true, //change to true
 
     };
 })
