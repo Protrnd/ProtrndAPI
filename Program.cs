@@ -60,7 +60,7 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 var port = Environment.GetEnvironmentVariable("PORT") ?? "443";
-var url = $"http://0.0.0.0:443";
+var url = $"http://0.0.0.0:{port}";
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "JWT_OR_COOKIE";
