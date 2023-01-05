@@ -13,6 +13,7 @@ using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,17 @@ builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpsRedirection();
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+    options.HttpsPort = 5228;
+});
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(60);
+});
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConnection"));
 builder.Services.AddSingleton<RegistrationService>();
@@ -87,6 +98,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+} else
+{
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
