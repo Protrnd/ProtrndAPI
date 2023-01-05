@@ -24,11 +24,11 @@ builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpsRedirection(options =>
-{
-    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-    options.HttpsPort = 443;
-});
+//builder.Services.AddHttpsRedirection(options =>
+//{
+//    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+//    options.HttpsPort = 443;
+//});
 builder.Services.AddHsts(options =>
 {
     options.Preload = true;
@@ -60,7 +60,7 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 var port = Environment.GetEnvironmentVariable("PORT") ?? "443";
-var url = $"http://0.0.0.0:{port}";
+var url = $"http://0.0.0.0:443";
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "JWT_OR_COOKIE";
