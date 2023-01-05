@@ -26,8 +26,8 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpsRedirection(options =>
 {
-    options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-    options.HttpsPort = 5228;
+    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+    options.HttpsPort = 443;
 });
 builder.Services.AddHsts(options =>
 {
@@ -59,7 +59,7 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5228";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "443";
 var url = $"http://0.0.0.0:{port}";
 builder.Services.AddAuthentication(options =>
 {
