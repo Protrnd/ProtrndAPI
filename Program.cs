@@ -23,7 +23,7 @@ builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpsRedirection(opt => opt.HttpsPort = 443);
+builder.Services.AddHttpsRedirection();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConnection"));
 builder.Services.AddSingleton<RegistrationService>();
