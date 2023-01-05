@@ -29,12 +29,6 @@ builder.Services.AddHttpContextAccessor();
 //    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
 //    options.HttpsPort = 443;
 //});
-builder.Services.AddHsts(options =>
-{
-    options.Preload = true;
-    options.IncludeSubDomains = true;
-    options.MaxAge = TimeSpan.FromDays(60);
-});
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConnection"));
 builder.Services.AddSingleton<RegistrationService>();
@@ -103,7 +97,7 @@ if (app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
