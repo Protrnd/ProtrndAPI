@@ -26,6 +26,10 @@ namespace ProtrndWebAPI.Services {
                 return accountDetails;
             return null;
         }
+        }
+        }
+        //    return null;
+        //}
 
         public async Task<bool> SupportAsync(Support support)
         {
@@ -120,6 +124,7 @@ namespace ProtrndWebAPI.Services {
             try
             {
                 transaction.Id = Guid.NewGuid();
+                transaction.Identifier = transaction.Id;
                 await _transactionCollection.InsertOneAsync(transaction);
                 return true;
             }
@@ -127,12 +132,6 @@ namespace ProtrndWebAPI.Services {
             {
                 return false;
             }
-        }
-
-        public async Task<bool> TransactionExistsAsync(string reference)
-        {
-            var exists = await _transactionCollection.Find(t => t.TrxRef == reference).SingleOrDefaultAsync();
-            return exists != null;
         }
 
         public async Task<int> GetTotalBalance(Guid profileId)
@@ -143,13 +142,83 @@ namespace ProtrndWebAPI.Services {
             foreach (var transaction in transactions)
             {
                 total += transaction.Amount;
-            }
-            return total;
-        }
+        //public async Task<bool> ChargeAuthCode(Promotion promotion)
+        //{
+        //    var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = promotion.Email, Amount = (promotion.Amount * 100).ToString() });
+        //    if (response.Data.Status == "success")
+        //        await UpdateNextPayDate(promotion);
+        //    else
+        //        await DisablePromotion(promotion);
+        //    return true;
+        //}
 
         public async Task<List<Promotion>> GetDuePromotions()
         {
             return await _promotionCollection.Find(p => !p.Disabled && p.ExpiryDate == DateTime.Now || p.ExpiryDate.AddMinutes(1) == DateTime.Now).ToListAsync();
+        }
+
+        public async Task<bool> UpdateNextPayDate(Promotion promotion)
+        {
+            var interval = promotion.ChargeIntervals;
+            if (interval == "week")
+                promotion.ExpiryDate.AddWeeks(1);
+            if (interval == "month")
+                promotion.ExpiryDate.AddMonths(1);
+            var filter = Builders<Promotion>.Filter.Where(p => !p.Disabled && p.ProfileId == promotion.ProfileId && p.Identifier == promotion.Identifier);
+            var updateSuccess = await _promotionCollection.ReplaceOneAsync(filter, promotion);
+            var transaction = new Transaction
+            {
+                Amount = promotion.Amount,
+                ProfileId = promotion.Identifier,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = promotion.PostId,
+                Purpose = $"Pay for promotion id = {promotion.PostId}"
+            };
+            await InsertTransactionAsync(transaction);
+            return updateSuccess.ModifiedCount > 0;
+        }
+
+        public async Task<bool> DisablePromotion(Promotion promotion)
+        public async Task<bool> DisablePromotion(Promotion promotion)
+            var filter = Builders<Promotion>.Filter.Where(p => !p.Disabled && p.ProfileId == promotion.ProfileId && p.Identifier == promotion.Identifier);
+            promotion.Disabled = true;
+            var updateSuccess = await _promotionCollection.ReplaceOneAsync(filter, promotion);
+            var transaction = new Transaction
+            {
+                Amount = promotion.Amount,
+                ProfileId = promotion.Identifier,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = promotion.PostId,
+                Purpose = $"Payment failed for promotion id = {promotion.PostId}"
+            };
+            await InsertTransactionAsync(transaction);
+            return updateSuccess.ModifiedCount > 0;
+        }
+        }
+        }
+        }
+
+        public async Task<List<Gift>> GetAllGiftAsync(Guid profileId)
+        {
+            var filter = Builders<Gift>.Filter.Where(s => s.ProfileId == profileId && s.Disabled == false);
+            var gifts = await _giftsCollection.Find(filter).ToListAsync();
+            return gifts;
+        }
+
+        public async Task<bool> BuyGiftsAsync(Guid profileId, int count)
+        {
+            var gifts = Enumerable.Repeat(new Gift { Id = null, ProfileId = profileId, Disabled = false }, count);
+            try
+            {
+                await _giftsCollection.InsertManyAsync(gifts);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
