@@ -28,12 +28,18 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = ActionResponseMessage.Ok, StatusCode = 200, Data = await _postsService.GetPromotionsAsync(_profile) });
         }
 
-        [HttpGet("get/{id}/gift/profiles")]
-        public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
+        [HttpGet("fetch/promotions/{page}")]
+        public async Task<ActionResult<ActionResponse>> GetPromotionsPaginated(int page)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetGiftersAsync(id) });
+            return Ok(new ActionResponse { Successful = true, Message = $"Promotions results for page {page}", StatusCode = 200, Data = await _postsService.GetPromotionsPaginatedAsync(page, _profileClaims) });
         }
+
+        //[HttpGet("{id}/gift/profiles")]
+        //public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
+        //{
+        //    return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
+        //    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetGiftersAsync(id) });
+        //}
 
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)
@@ -72,9 +78,11 @@ namespace ProtrndWebAPI.Controllers
             {
                 var like = new Like { SenderId = _profile.Identifier, Time = DateTime.Now, UploadId = id };
                 var liked = await _postsService.AddLikeAsync(like);
-                var notiSent = await _notificationService.LikeNotification(_profile, post.ProfileId);
-                if (liked && notiSent)
-                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
+                if (liked && _profileClaims.ID != post.ProfileId)
+                {
+                    await _notificationService.LikeNotification(_profileClaims, post.ProfileId, post.Identifier);
+                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = true });
+                }
             }
             return NotFound(new ActionResponse { Message = ActionResponseMessage.BadRequest });
         }
@@ -113,17 +121,12 @@ namespace ProtrndWebAPI.Controllers
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
         }
 
-        [HttpGet("get/{id}/gifts")]
-        public async Task<ActionResult> GetAllGiftsOnPost(Guid id)
-        {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllGiftOnPostAsync(id) });
-        }
-
-        [HttpGet("mobile/get/{id}/gifts")]
-        public async Task<ActionResult> MobileGetAllGiftsOnPost(Guid id)
-        {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllGiftOnPostAsync(id) });
-        }
+        //[HttpGet("{id}/gifts")]
+        //public async Task<ActionResult> GetAllGiftsOnPost(Guid id)
+        //{
+        //    return NotFound();
+        //    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllGiftOnPostAsync(id) });
+        //}
 
         [HttpGet("get/{id}/comments")]
         public async Task<ActionResult<ActionResponse>> GetComments(Guid id)

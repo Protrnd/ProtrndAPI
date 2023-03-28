@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
 using Tag = ProtrndWebAPI.Models.Posts.Tag;
 
@@ -11,7 +12,6 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoDatabase Database;
         public readonly IMongoCollection<Post> _postsCollection;
         public readonly IMongoCollection<Profile> _profileCollection;
-        public readonly IMongoCollection<Category> _categoriesCollection;
         public readonly IMongoCollection<Register> _registrationCollection;
         public readonly IMongoCollection<Like> _likeCollection;
         public readonly IMongoCollection<Comment> _commentCollection;
@@ -21,18 +21,18 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoCollection<Promotion> _promotionCollection;
         public readonly IMongoCollection<Transaction> _transactionCollection;
         public readonly IMongoCollection<Favorite> _favoriteCollection;
-        public readonly IMongoCollection<Gift> _giftsCollection;
         public readonly IMongoCollection<AccountDetails> _accountDetailsCollection;
+        public readonly IMongoCollection<Support> _supportCollection;
+        public readonly IMongoCollection<Chat> _chatCollection;
+        public readonly IMongoCollection<Conversations> _conversationsCollection;
 
         public BaseService(IOptions<DBSettings> settings)
         {
-            MongoClient client = new(settings.Value.ConnectionURI);
+            MongoClient client = new(settings.Value.TestConnectionURI); //TODO: Change back to ConnectionURI
             Database = client.GetDatabase(settings.Value.DatabaseName);
-            _categoriesCollection = Database.GetCollection<Category>(settings.Value.CategoriesCollection);
             _postsCollection = Database.GetCollection<Post>(settings.Value.PostsCollection);
             _likeCollection = Database.GetCollection<Like>(settings.Value.LikesCollection);
             _commentCollection = Database.GetCollection<Comment>(settings.Value.CommentsCollection);
-            _categoriesCollection = Database.GetCollection<Category>(settings.Value.CategoriesCollection);
             _registrationCollection = Database.GetCollection<Register>(settings.Value.UserCollection);
             _profileCollection = Database.GetCollection<Profile>(settings.Value.ProfilesCollection);
             _tagsCollection = Database.GetCollection<Tag>(settings.Value.TagsCollection);
@@ -41,8 +41,10 @@ namespace ProtrndWebAPI.Services
             _promotionCollection = Database.GetCollection<Promotion>(settings.Value.PromotionsCollection);
             _transactionCollection = Database.GetCollection<Transaction>(settings.Value.TransactionsCollection);
             _favoriteCollection = Database.GetCollection<Favorite>(settings.Value.FavoritesCollection);
-            _giftsCollection = Database.GetCollection<Gift>(settings.Value.GiftsCollection);
-            _accountDetailsCollection = Database.GetCollection<AccountDetails>(settings.Value.AccountDetailsCollection); 
+            _accountDetailsCollection = Database.GetCollection<AccountDetails>(settings.Value.AccountDetailsCollection);
+            _supportCollection = Database.GetCollection<Support>(settings.Value.SupportCollection);
+            _chatCollection = Database.GetCollection<Chat>(settings.Value.ChatCollection);
+            _conversationsCollection = Database.GetCollection<Conversations>(settings.Value.ConversationsCollection);
         }
 
         public static string FormatNumber(int number)

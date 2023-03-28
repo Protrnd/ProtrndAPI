@@ -13,10 +13,9 @@ using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 
 builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 {
@@ -30,13 +29,12 @@ builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConne
 builder.Services.AddSingleton<RegistrationService>();
 builder.Services.AddSingleton<PostsService>();
 builder.Services.AddSingleton<ProfileService>();
-builder.Services.AddSingleton<CategoriesService>();
 builder.Services.AddSingleton<SearchService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<PaymentService>();
+builder.Services.AddSingleton<ChatService>();
 builder.Services.AddAntiforgery(o => o.SuppressXFrameOptionsHeader = true);
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -50,7 +48,8 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
-
+var port = Environment.GetEnvironmentVariable("PORT") ?? "443";
+var url = $"http://0.0.0.0:{port}";
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "JWT_OR_COOKIE";
@@ -66,8 +65,9 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
-        ValidateIssuer = false,
-        ValidateAudience = false
+        ValidateIssuer = false, //change to true 
+        ValidateAudience = false, //change to true
+
     };
 })
     .AddPolicyScheme("JWT_OR_COOKIE", "JWT_OR_COOKIE", options =>
@@ -83,7 +83,6 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -110,4 +109,5 @@ app.MapControllers();
 
 app.MapDefaultControllerRoute();
 
-app.Run();
+app.Run(url);
+//app.Run();

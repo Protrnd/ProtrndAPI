@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PayStack.Net;
+using MimeKit;
+using MongoDB.Driver.Linq;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Services.Network;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace ProtrndWebAPI.Controllers
 {
@@ -10,247 +12,220 @@ namespace ProtrndWebAPI.Controllers
     [ProTrndAuthorizationFilter]
     public class PaymentController : BaseController
     {
-        private PayStackApi PayStack { get; set; }
-
-        private readonly string token;
+        private readonly IConfiguration _configuration;
 
         public PaymentController(IServiceProvider serviceProvider, IConfiguration configuration) : base(serviceProvider)
         {
-            token = configuration["Payment:PaystackSK"];
-            PayStack = new(token);
+            _configuration = configuration;
         }
 
-        [HttpPost("buy_gifts/balance/{count}")]
-        public async Task<ActionResult<ActionResponse>> BuyGifts(int count)
+        [HttpPost("balance/{profileId}")]
+        public async Task<ActionResult<ActionResponse>> GetTotalBalance(Guid profileId)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            var trxRef = Generate().ToString();
-            if (count < 1)
-                return BadRequest(new ActionResponse { StatusCode = 400, Message = "Cannot buy less than 1 gift" });
-            var value = 500 * count;
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetSupportTotal(profileId) });
+        }
 
-            var totalBalance = await _paymentService.GetTotalBalance(_profile.Identifier);
-            if (totalBalance < 0 && totalBalance <= value)
-                return BadRequest(new ActionResponse { Message = "Error buying gifts" });
-
-            var transaction = new Transaction
+        [HttpPost("support")]
+        public async Task<IActionResult> Support(SupportDTO dto)
+        {
+            var support = new Support
             {
-                Amount = value,
-                ProfileId = _profile.Identifier,
-                CreatedAt = DateTime.Now,
-                TrxRef = trxRef,
-                ItemId = Guid.NewGuid(),
-                Purpose = $"Purchase {count} gifts"
+                SenderId = _profileClaims.ID,
+                ReceiverId = dto.ReceiverId,
+                Amount = dto.Amount,
+                Time = DateTime.Now,
+                Reference = dto.Reference,
+                PostId = dto.PostId
             };
-
-            await _paymentService.InsertTransactionAsync(transaction);
-            await _paymentService.BuyGiftsAsync(_profile.Identifier, count);
-            return Ok(new ActionResponse { Successful = true, Data = trxRef, Message = ActionResponseMessage.Ok, StatusCode = 200 });
+            support.Identifier = support.Id;
+            var successful = await _paymentService.SupportAsync(support);
+            return Ok(new ActionResponse
+            {
+                Successful = successful,
+                Message = "OK",
+                Data = "Support",
+                StatusCode = 200
+            });
         }
 
-        [HttpPost("balance")]
-        public async Task<ActionResult<ActionResponse>> GetTotalBalance()
+        [HttpGet("support/all")]
+        public async Task<IActionResult> GetAllSupport()
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetTotalBalance(_profile.Identifier) });
+            var supports = await _paymentService.GetAllSupports(_profileClaims.ID);
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = supports,
+                StatusCode = 200
+            });
         }
 
-        [HttpPost("top_up/balance/{total}")]
-        public async Task<ActionResult<object>> TopUpBalance(int total)
+        [HttpGet("support/all/post/{postId}")]
+        public async Task<IActionResult> GetAllSupportOnPost(Guid postId)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            TransactionInitializeRequest request = new()
+            var supports = await _paymentService.GetSupportsOnPost(postId);
+            return Ok(new ActionResponse
             {
-                AmountInKobo = total * 100,
-                Email = _profile.Email,
-                Reference = Generate().ToString(),
-                Currency = "NGN"
-                //CallbackUrl = ""
-            };
+                Successful = true,
+                Message = "OK",
+                Data = supports,
+                StatusCode = 200
+            });
+        }
 
-            TransactionInitializeResponse response = PayStack.Transactions.Initialize(request);
-            if (response.Status)
+        [HttpPost("support/withdraw")]
+        public async Task<IActionResult> WithdrawAllSupport()
+        {
+            var withdrawalReference = await _paymentService.WithdrawSupports(_profileClaims.ID);
+            if (withdrawalReference != "")
             {
-                var transaction = new Transaction
+                SendSupportWithdrawEmail(_profileClaims.Email, withdrawalReference);
+                ReceiveSupportWithdrawEmail(withdrawalReference, _profileClaims.ID);
+                return Ok(new ActionResponse
                 {
-                    Amount = total,
-                    ProfileId = _profile.Identifier,
-                    CreatedAt = DateTime.Now,
-                    TrxRef = request.Reference,
-                    ItemId = Guid.NewGuid()
-                };
-
-                await _paymentService.InsertTransactionAsync(transaction);
-                return Ok(new { Success = true, Ref = request.Reference, Data = response.Data.AuthorizationUrl });
+                    Successful = true,
+                    Message = "OK",
+                    Data = withdrawalReference,
+                    StatusCode = 200
+                });
             }
-            return BadRequest(new { Success = false, Ref = request.Reference, Data = "Error making transaction" });
+            return BadRequest(new ActionResponse
+            {
+                Successful = false,
+                Message = "Insufficient withdrawal funds",
+                Data = withdrawalReference,
+                StatusCode = 400
+            });
         }
 
-        [HttpPost("send_gifts/{id}/{count}")]
-        public async Task<ActionResult<object>> SendGift(Guid id, int count)
+        private string SendSupportWithdrawEmail(string to, string reference)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            if (count < 1 || count > 100)
+            var from = _configuration[Constants.NoreplyEmailFrom];
+            var connection = _configuration[Constants.NoreplyEmailConnection];
+            var password = _configuration[Constants.NoreplyEmailPass];
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(from));
+            email.To.Add(MailboxAddress.Parse(to));
+            email.Subject = "Your withdrawal request";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your request for withdrawal reference is: {reference}. You will receive your payment within 72 hours and if you do not receive it please send an email to us at protrndng@gmail.com. Thank you" };
+            using var smtp = new SmtpClient();
+            smtp.AuthenticationMechanisms.Remove("XOAUTH2");
+            smtp.Connect(connection, 465);
+            smtp.Authenticate(from, password);
+            try
             {
-                return BadRequest(new ActionResponse { Message = Constants.InvalidAmount });
+                smtp.Send(email);
+                return reference;
             }
-            var totalGifts = await _paymentService.GetTotalGiftsAsync(_profile.Identifier);
-            if (totalGifts < count)
-                return BadRequest(new ActionResponse { Message = "Insufficient Gifts" });
-            var post = await _postsService.GetSinglePostAsync(id);
-            if (post == null || !post.AcceptGift || post.ProfileId == _profile.Identifier)
-                return BadRequest(new ActionResponse { Message = "Error accessing post" });
-
-            var sent = await _postsService.SendGiftToPostAsync(post, count, _profile.Identifier);
-            if (sent < 1)
-                return BadRequest(new ActionResponse { Message = "Error sending gift" });
-
-            var transaction = new Transaction
+            catch (Exception)
             {
-                Amount = count,
-                ProfileId = _profile.Identifier,
-                CreatedAt = DateTime.Now,
-                TrxRef = Generate().ToString(),
-                ItemId = id,
-                Purpose = $"Sending {count} gifts"
-            };
-
-            var responseOk = await _paymentService.InsertTransactionAsync(transaction);
-            var notificationSent = await _notificationService.SendGiftNotification(_profile, post, count);
-            if (responseOk && notificationSent)
-                return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = $"{count} {count switch { > 1 => "gifts", < 2 => "gift" }} sent" });
-            return BadRequest(new ActionResponse { Message = "Error sending gift" });
+                return "";
+            }
         }
 
-        [HttpPost("withdraw/balance/{total}")]
-        public async Task<IActionResult> RequestWithdrawal(int total)
+        private string ReceiveSupportWithdrawEmail(string reference, Guid profileId)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            var success = await _paymentService.RequestWithdrawalAsync(_profile, total);
-            if (success)
-                return BadRequest(new ActionResponse { Successful = false, Message = "Error requesting withdrawal" });
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
+            var from = _configuration[Constants.NoreplyEmailFrom];
+            var connection = _configuration[Constants.NoreplyEmailConnection];
+            var password = _configuration[Constants.NoreplyEmailPass];
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(from));
+            email.To.Add(MailboxAddress.Parse("protrndng@gmail.com"));
+            email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
+            email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
+            email.Cc.Add(MailboxAddress.Parse("ifeanyiiiofurum@gmail.com "));
+            email.Subject = "Withdrawal request";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Profile ID: <b>{profileId}</b></p>" };
+            using var smtp = new SmtpClient();
+            smtp.AuthenticationMechanisms.Remove("XOAUTH2");
+            smtp.Connect(connection, 465);
+            smtp.Authenticate(from, password);
+            try
+            {
+                smtp.Send(email);
+                return reference;
+            }
+            catch (Exception)
+            {
+                return "";
+            }
         }
 
         [HttpPost("verify/promotion")]
         public async Task<ActionResult> VerifyPromotionPayment(VerifyTransaction promotion)
         {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            TransactionVerifyResponse response = PayStack.Transactions.Verify(promotion.Reference);
-            if (response.Data.Status == "success")
-            {
-                var promotionDto = promotion.Type as Promotion;
-                var transaction = new Transaction
+            if (_profileClaims == null || _postsService == null || _paymentService == null)
+                return new ObjectResult(new ActionResponse
                 {
-                    Amount = 1500,
-                    ProfileId = _profile.Identifier,
-                    CreatedAt = DateTime.Now,
-                    TrxRef = response.Data.Reference,
-                    ItemId = promotionDto.PostId,
-                    Purpose = $"Pay for promotion id = {promotionDto.PostId}"
-                };
+                    Successful = false,
+                    Message = "Error making connection",
+                    Data = promotionTransaction.Reference,
+                    StatusCode = 412
+                })
+                { StatusCode = 412 };
+            var promotionDto = promotionTransaction.Promotion;
+            var amount = promotionTransaction.Promotion.Amount;
+            var transaction = new Transaction
+            {
+                Amount = amount,
+                ProfileId = _profileClaims.ID,
+                CreatedAt = DateTime.Now,
+                TrxRef = promotionTransaction.Reference,
+                ItemId = promotionDto.PostId,
+                Purpose = $"Payment for promotion id = {promotionDto.PostId}"
+            };
 
+            var transactionExists = await _paymentService.TransactionExistsAsync(transaction.TrxRef);
+
+            if (!transactionExists)
+            {
                 var verifyStatus = await _paymentService.InsertTransactionAsync(transaction);
                 if (verifyStatus)
                 {
-                    var promotionOk = await _postsService.PromoteAsync(_profile, promotionDto);
+                    promotionDto.Email = _profileClaims.Email;
+                    DateTime expiry = DateTime.Now;
+                    if (promotionDto.ChargeIntervals == "month")
+                        expiry = DateTime.Now.AddMonths(1);
+                    var promotion = new Promotion
+                    {
+                        CreatedAt = DateTime.Now,
+                        Email = _profileClaims.Email,
+                        PostId = promotionDto.PostId,
+                        Audience = promotionDto.Audience,
+                        Amount = amount,
+                        ChargeIntervals = promotionDto.ChargeIntervals,
+                        BannerUrl = promotionDto.BannerUrl,
+                        ProfileId = _profileClaims.ID,
+                        ExpiryDate = expiry,
+                    };
+                    promotion.Identifier = promotion.Id;
+                    var promotionOk = await _postsService.PromoteAsync(_profileClaims, promotion);
                     if (promotionOk)
+                    {
+                        await _notificationService.PromotionNotification(_profileClaims, promotion.Identifier);
                         return Ok(new ActionResponse
                         {
                             Successful = true,
-                            Message = response.Message,
+                            Message = "OK",
                             Data = promotionOk,
                             StatusCode = 200
                         });
+                    }
                 }
             }
-            return BadRequest(new ActionResponse
+
+            return new ObjectResult(new ActionResponse
             {
                 Successful = false,
-                Message = response.Message,
+                Message = "Error occured",
                 Data = null,
                 StatusCode = 422
-            });
-        }
-
-        [HttpPost("verify/accept_gift/{id}/{reference}")]
-        public async Task<ActionResult<ActionResponse>> VerifyAcceptGift(Guid id, string reference)
-        {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            TransactionVerifyResponse response = PayStack.Transactions.Verify(reference);
-            if (response.Data.Status == "success")
+            })
             {
-                var transaction = new Transaction
-                {
-                    Amount = 1500,
-                    ProfileId = _profile.Identifier,
-                    CreatedAt = DateTime.Now,
-                    TrxRef = response.Data.Reference,
-                    ItemId = id,
-                    //Status = true
-                };
-
-                var resultOk = await _paymentService.InsertTransactionAsync(transaction);
-                if (resultOk)
-                {
-                    var acceptResultOk = await _postsService.AcceptGift(id);
-                    if (acceptResultOk)
-                        return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
-                }
-            }
-            return BadRequest(new ActionResponse { Message = "Error verifying payment" });
+                StatusCode = 422
+            };
         }
-
-        [HttpPost("verify/top_up/{reference}")]
-        public async Task<ActionResult> VerifyTopUpBalance(string reference)
-        {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            TransactionVerifyResponse response = PayStack.Transactions.Verify(reference);
-            if (response.Data.Status == "success")
-            {
-                var amount = response.Data.Amount / 100;
-                var transaction = new Transaction
-                {
-                    Amount = amount,
-                    ProfileId = _profile.Identifier,
-                    CreatedAt = DateTime.Now,
-                    TrxRef = response.Data.Reference,
-                    ItemId = Guid.NewGuid(),
-                    Purpose = $"Top up {amount}"
-                };
-                var verifyStatus = await _paymentService.InsertTransactionAsync(transaction);
-                if (verifyStatus)
-                {
-                    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
-                }
-            }
-            return BadRequest(new ActionResponse { Message = "Error verifying payment" });
-        }
-
-        //[HttpPost("verify/purchase/gift/{reference}")]
-        //public async Task<ActionResult> VerifyGiftPurchase(string reference)
-        //{
-        //    var transaction = await _paymentService.GetTransactionByRefAsync(reference);
-        //    if (transaction.ProfileId != _profile.Identifier)
-        //        return Unauthorized(new DataResponse
-        //        {
-        //            Data = 403,
-        //            Status = "Access dienied to the requested resource"
-        //        });
-        //    TransactionVerifyResponse response = PayStack.Transactions.Verify(reference);
-        //    if (response.Data.Status == "success")
-        //    {
-        //        var count = response.Data.Amount / 50000;
-        //        var verifyStatus = await _paymentService.VerifyTransactionAsync(transaction);
-        //        if (verifyStatus != null && verifyStatus.Status)
-        //        {
-        //            var giftsBought = await _paymentService.BuyGiftsAsync(_profile.Identifier, count);
-        //            if (giftsBought)
-        //                return Ok(new BasicResponse { Success = true, Message = response.Message });
-        //        }
-        //    }
-        //    return BadRequest(new BasicResponse { Message = "Error verifying payment" });
-        //}
 
         private static int Generate()
         {

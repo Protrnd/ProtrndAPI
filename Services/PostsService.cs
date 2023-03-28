@@ -1,8 +1,9 @@
-﻿using MailKit.Net.Smtp;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
-using MimeKit;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.Posts;
 using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
@@ -25,18 +26,48 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetPagePostsAsync(int page)
         {
-            var pageResults = 10f;
-            var posts = await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled)).ToListAsync();
-            var pageCount = Math.Ceiling(posts.Count / pageResults);
-            return posts.Skip((page - 1) * (int)pageResults)
-                .Take((int)pageResults)
-                .ToList();
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled))
+                .SortByDescending(b => b.Time)
+                .Skip((page - 1) * 10)
+                .Limit(10)
+                .ToListAsync();
         }
 
-        public async Task<bool> PromoteAsync(Profile profile, Promotion promotion)
+        public async Task<List<Post>> GetPostQuery(PostQuery query)
+        {
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled && p.Caption.Contains(query.Word)))
+                .SortByDescending(b => b.Time)
+                .Skip((query.Page - 1) * 10)
+                .Limit(10)
+                .ToListAsync();
+        }
+
+        public async Task<long> GetQueryCount(string word)
+        {
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled & p.Caption.Contains(word)))
+                .CountDocumentsAsync();
+        }
+
+        public async Task<List<Promotion>> GetPromotionsPaginatedAsync(int page, TokenClaims profile)
+        {
+            var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            if (profileDetail.Location == null)
+                return new List<Promotion>();
+            var location = profileDetail.Location.Split(',');
+            //30,000 naira paid means promotion is accessible by every user
+            //location[0] = State
+            //location[1] = City
+            return await _promotionCollection
+                .Find(Builders<Promotion>.Filter
+                .Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
+                .Skip((page - 1) * 15)
+                .Limit(15).ToListAsync();
+        }
+
+        public async Task<bool> PromoteAsync(TokenClaims profile, Promotion promotion)
         {
             promotion.Identifier = promotion.Id;
-            promotion.ProfileId = profile.Identifier;
+            promotion.ProfileId = profile.ID;
             try
             {
                 await _promotionCollection.InsertOneAsync(promotion);
@@ -48,59 +79,6 @@ namespace ProtrndWebAPI.Services
             }
         }
 
-        public async Task<long> SendGiftToPostAsync(Post post, int count, Guid userId)
-        {
-            if (post != null && post.AcceptGift)
-            {
-                var filter = Builders<Gift>.Filter.Where(g => g.ProfileId == userId && !g.Disabled);
-                var gifts = await _giftsCollection.Find(filter).ToListAsync();
-                long updateResult = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    var updateBuilder = Builders<Gift>.Update;
-                    var update = updateBuilder.Set(g => g.ProfileId, post.ProfileId).Set(g => g.PostId, post.Identifier);
-                    var updateOne = await _giftsCollection.UpdateOneAsync(filter, update);
-                    updateResult += updateOne.ModifiedCount;
-                }
-                return updateResult;
-            }
-            return 0;
-        }
-
-        public async Task<List<Gift>> GetAllGiftOnPostAsync(Guid postId)
-        {
-            return await _giftsCollection.Find(Builders<Gift>.Filter.Where(s => s.PostId == postId)).ToListAsync();
-        }
-
-        public async Task<List<Profile>> GetGiftersAsync(Guid id)
-        {
-            var profiles = new List<Profile>();
-            var giftNotifications = await _notificationService.GetGiftNotificationsByIdAsync(id.ToString());
-            foreach (var notification in giftNotifications)
-            {
-                var sender = await _profileService.GetProfileByIdAsync(notification.SenderId);
-                if (profiles.Find(p => p.Identifier == sender.Identifier) == null)
-                    profiles.Add(sender);
-            }
-            return profiles;
-        }
-
-        private static void SendMail(string To, string Body)
-        {
-            var companyAddress = "maryse.abshire24@ethereal.email";
-            var _email = new MimeMessage();
-            _email.From.Add(MailboxAddress.Parse(companyAddress));
-            _email.To.Add(MailboxAddress.Parse(To));
-            _email.Cc.Add(MailboxAddress.Parse("Jamesodike26@gmail.com"));
-            _email.Subject = $"Request for withdrawal";
-            _email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = Body };
-            using var smtp1 = new SmtpClient();
-            smtp1.Connect("smtp.ethereal.email", 587, MailKit.Security.SecureSocketOptions.StartTls);
-            smtp1.Authenticate(companyAddress, "9sSpFDJsceTZ1aUD8E");
-            smtp1.Send(_email);
-            smtp1.Disconnect(true);
-        }
-                
         public async Task<bool> AcceptGift(Guid id)
         {
             var filter = Builders<Post>.Filter.Eq(p => p.Identifier, id);
@@ -130,24 +108,37 @@ namespace ProtrndWebAPI.Services
             return await _likeCollection.Find(Builders<Like>.Filter.Eq(l => l.UploadId, id)).ToListAsync();
         }
 
-        public async Task<List<Promotion>> GetPromotionsAsync(Profile profile)
+        public async Task<List<Promotion>> GetPromotionsAsync(TokenClaims profile)
         {
-            var location = profile.Location.Split(',');
+            var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            if (profileDetail.Location == null)
+                return new List<Promotion>();
+            var location = profileDetail.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpireAt <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.Name == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1])).ToListAsync();
         }
 
-        public async Task<bool> AddLikeAsync(Like like)
+        public async Task<bool> AddLikeAsync(Like likeDto)
         {
-            var liked = await _likeCollection.Find(l => l.SenderId == like.SenderId && l.UploadId == like.UploadId).FirstOrDefaultAsync();
+            var liked = await _likeCollection.Find(l => l.SenderId == likeDto.SenderId && l.UploadId == likeDto.UploadId).FirstOrDefaultAsync();
             if (liked == null)
             {
-                await _likeCollection.InsertOneAsync(like);
+                await _likeCollection.InsertOneAsync(new Like { UploadId = likeDto.UploadId, SenderId = likeDto.SenderId });
                 return true;
             }
             return false;
+        }
+
+        public async Task<bool> IsLikedAsync(LikeDTO likeDto)
+        {
+            var liked = await _likeCollection.Find(l => l.SenderId == likeDto.SenderId && l.UploadId == likeDto.UploadId).FirstOrDefaultAsync();
+            if (liked == null)
+            {
+                return false;
+            }
+            return true;
         }
 
         public async Task<bool> RemoveLike(Guid postId, Guid profileId)
@@ -176,7 +167,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Comment>> GetCommentsAsync(Guid id)
         {
-            return await _commentCollection.Find(Builders<Comment>.Filter.Eq<Guid>(c => c.PostId, id)).ToListAsync();
+            return await _commentCollection.Find(Builders<Comment>.Filter.Eq<Guid>(c => c.PostId, id)).SortBy(c => c.Time).SortByDescending(c => c.Time).ToListAsync();
         }
 
         public async Task<Post?> GetSinglePostAsync(Guid id)
@@ -189,7 +180,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetUserPostsAsync(Guid userId)
         {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.ProfileId == userId && !p.Disabled)).SortBy(p => p.Time).ToListAsync();
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.ProfileId == userId && !p.Disabled)).SortBy(p => p.Time).SortByDescending(b => b.Time).ToListAsync();
         }
 
         public async Task<bool> DeletePostAsync(Guid postId, Guid profileId)
@@ -204,10 +195,5 @@ namespace ProtrndWebAPI.Services
             }
             return false;
         }
-
-        public async Task<List<Post>> GetPostsInCategoryAsync(string category)
-        {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.Category.Contains(category))).ToListAsync();
-        }    
     }
 }
