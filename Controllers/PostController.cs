@@ -139,13 +139,6 @@ namespace ProtrndWebAPI.Controllers
             return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
         }
 
-        [HttpGet("{id}/gifts")]
-        public async Task<ActionResult> GetAllGiftsOnPost(Guid id)
-        {
-            return NotFound();
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetAllGiftOnPostAsync(id) });
-        }
-
         [HttpGet("{id}/comments")]
         public async Task<ActionResult<ActionResponse>> GetComments(Guid id)
         {
