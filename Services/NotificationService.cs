@@ -2,6 +2,7 @@
 using ProtrndWebAPI.Settings;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ProtrndWebAPI.Models.Posts;
 
 namespace ProtrndWebAPI.Services
 {
@@ -52,6 +53,13 @@ namespace ProtrndWebAPI.Services
             return;
         }
 
+        public async Task PromotionNotification(TokenClaims sender, Guid promotionId)
+        {
+            var message = "Your promotion is live";
+            await _notificationsCollection.InsertOneAsync(Notification(Guid.Empty, sender.ID, message, "Promotion", promotionId));
+            return;
+        }
+
         public async Task SupportNotification(Profile sender, Guid receiverId)
         {
             var message = sender.UserName + Constants.Commented;
@@ -59,12 +67,12 @@ namespace ProtrndWebAPI.Services
             return;
         }
 
-        public async Task<bool> SendGiftNotification(TokenClaims sender, Post post, long count)
+        public async Task<bool> SendGiftNotification(TokenClaims sender, Post post, int amount)
         {
             try
             {
-                var message = sender.UserName + $" sent {count} gift to your post: " + post.Identifier;
-                //await _notificationsCollection.InsertOneAsync(Notification(sender.ID, post.ProfileId, message));
+                var message = sender.UserName + $" sent {amount} in gifts to your post: " + post.Identifier;
+                await _notificationsCollection.InsertOneAsync(Notification(sender.ID, post.ProfileId, message, "post", post.Identifier));
                 return true;
             }
             catch (Exception)

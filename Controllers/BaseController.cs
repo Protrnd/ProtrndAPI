@@ -14,11 +14,10 @@ namespace ProtrndWebAPI.Controllers
         public readonly TagsService? _tagsService;
         public readonly TokenClaims? _profileClaims;
         public readonly PaymentService? _paymentService;
-        public readonly LocationService? _locationService;
+        public readonly ChatService? _chatService;
 
         public BaseController(IServiceProvider serviceProvider)
         {
-            _locationService = serviceProvider.GetService<LocationService>();
             _regService = serviceProvider.GetService<RegistrationService>();
             _userService = serviceProvider.GetService<IUserService>();
             _notificationService = serviceProvider.GetService<NotificationService>();
@@ -27,6 +26,7 @@ namespace ProtrndWebAPI.Controllers
             if (_userService != null) _profileClaims = _userService.GetProfileTokenClaims();
             _searchService = serviceProvider.GetService<SearchService>();
             _tagsService = serviceProvider.GetService<TagsService>();
+            _chatService = serviceProvider.GetService<ChatService>();
             _paymentService = serviceProvider.GetService<PaymentService>();
         }
     }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services

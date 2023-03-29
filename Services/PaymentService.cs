@@ -4,10 +4,16 @@ using MongoDB.Driver.Linq;
 using PayStack.Net;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Settings;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace ProtrndWebAPI.Services {
-    public class PaymentService : BaseService {
-        public PaymentService(IOptions<DBSettings> settings, IConfiguration configuration) : base(settings) { }
+namespace ProtrndWebAPI.Services
+{
+    public class PaymentService : BaseService
+    {
+        public PaymentService(IOptions<DBSettings> settings, IConfiguration configuration) : base(settings)
+        {
+        }
 
         public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account)
         {
@@ -26,10 +32,6 @@ namespace ProtrndWebAPI.Services {
                 return accountDetails;
             return null;
         }
-        }
-        }
-        //    return null;
-        //}
 
         public async Task<bool> SupportAsync(Support support)
         {
@@ -54,17 +56,6 @@ namespace ProtrndWebAPI.Services {
             return await _supportCollection.Find(s => s.PostId == postId).ToListAsync();
         }
 
-        public async Task<int> GetSupportTotal(Guid profileId)
-        {
-            var supports = await GetAllSupports(profileId);
-            var total = 0;
-            foreach (var support in supports)
-            {
-                total += support.Amount;
-            }
-            return total;
-        }
-
         public async Task<string> WithdrawSupports(Guid profileId)
         {
             var supportTotal = await GetSupportTotal(profileId);
@@ -75,6 +66,17 @@ namespace ProtrndWebAPI.Services {
             var support = new Support { Amount = -supportTotal, PostId = Guid.Empty, ReceiverId = profileId, SenderId = Guid.Empty, Reference = GenerateReference().ToString() };
             await _supportCollection.InsertOneAsync(support);
             return support.Reference;
+        }
+
+        public async Task<int> GetSupportTotal(Guid profileId)
+        {
+            var supports = await GetAllSupports(profileId);
+            var total = 0;
+            foreach (var support in supports)
+            {
+                total += support.Amount;
+            }
+            return total;
         }
 
         private static int GenerateReference()
@@ -134,23 +136,12 @@ namespace ProtrndWebAPI.Services {
             }
         }
 
-        public async Task<int> GetTotalBalance(Guid profileId)
+        public async Task<bool> TransactionExistsAsync(string reference)
         {
-            var filter = Builders<Transaction>.Filter.Where(s => s.ProfileId == profileId);
-            var transactions = await _transactionCollection.Find(filter).ToListAsync();
-            var total = 0;
-            foreach (var transaction in transactions)
-            {
-                total += transaction.Amount;
-        //public async Task<bool> ChargeAuthCode(Promotion promotion)
-        //{
-        //    var response = PayStack.Charge.ChargeAuthorizationCode(new AuthorizationCodeChargeRequest { AuthorizationCode = promotion.AuthCode, Email = promotion.Email, Amount = (promotion.Amount * 100).ToString() });
-        //    if (response.Data.Status == "success")
-        //        await UpdateNextPayDate(promotion);
-        //    else
-        //        await DisablePromotion(promotion);
-        //    return true;
-        //}
+            var exists = await _transactionCollection.Find(t => t.TrxRef == reference).SingleOrDefaultAsync();
+            return exists != null;
+        }
+
 
         public async Task<List<Promotion>> GetDuePromotions()
         {
@@ -177,48 +168,6 @@ namespace ProtrndWebAPI.Services {
             };
             await InsertTransactionAsync(transaction);
             return updateSuccess.ModifiedCount > 0;
-        }
-
-        public async Task<bool> DisablePromotion(Promotion promotion)
-        public async Task<bool> DisablePromotion(Promotion promotion)
-            var filter = Builders<Promotion>.Filter.Where(p => !p.Disabled && p.ProfileId == promotion.ProfileId && p.Identifier == promotion.Identifier);
-            promotion.Disabled = true;
-            var updateSuccess = await _promotionCollection.ReplaceOneAsync(filter, promotion);
-            var transaction = new Transaction
-            {
-                Amount = promotion.Amount,
-                ProfileId = promotion.Identifier,
-                CreatedAt = DateTime.Now,
-                TrxRef = Generate().ToString(),
-                ItemId = promotion.PostId,
-                Purpose = $"Payment failed for promotion id = {promotion.PostId}"
-            };
-            await InsertTransactionAsync(transaction);
-            return updateSuccess.ModifiedCount > 0;
-        }
-        }
-        }
-        }
-
-        public async Task<List<Gift>> GetAllGiftAsync(Guid profileId)
-        {
-            var filter = Builders<Gift>.Filter.Where(s => s.ProfileId == profileId && s.Disabled == false);
-            var gifts = await _giftsCollection.Find(filter).ToListAsync();
-            return gifts;
-        }
-
-        public async Task<bool> BuyGiftsAsync(Guid profileId, int count)
-        {
-            var gifts = Enumerable.Repeat(new Gift { Id = null, ProfileId = profileId, Disabled = false }, count);
-            try
-            {
-                await _giftsCollection.InsertManyAsync(gifts);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
         }
     }
 }

@@ -24,11 +24,6 @@ builder.Services.AddCors(p => p.AddPolicy(Constants.CORS, builder =>
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
-//builder.Services.AddHttpsRedirection(options =>
-//{
-//    //options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-//    options.HttpsPort = 443;
-//});
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBConnection"));
 builder.Services.AddSingleton<RegistrationService>();
@@ -38,7 +33,7 @@ builder.Services.AddSingleton<SearchService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<PaymentService>();
-builder.Services.AddSingleton<LocationService>();
+builder.Services.AddSingleton<ChatService>();
 builder.Services.AddAntiforgery(o => o.SuppressXFrameOptionsHeader = true);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -97,7 +92,7 @@ if (app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
@@ -117,5 +112,5 @@ app.MapControllers();
 
 app.MapDefaultControllerRoute();
 
-//app.Run(url);
-app.Run();
+app.Run(url);
+//app.Run();

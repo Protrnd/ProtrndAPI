@@ -46,12 +46,12 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = $"Promotions results for page {page}", StatusCode = 200, Data = await _postsService.GetPromotionsPaginatedAsync(page, _profileClaims) });
         }
 
-        [HttpGet("{id}/gift/profiles")]
-        public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
-        {
-            return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetGiftersAsync(id) });
-        }
+        //[HttpGet("{id}/gift/profiles")]
+        //public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
+        //{
+        //    return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
+        //    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetGiftersAsync(id) });
+        //}
 
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)

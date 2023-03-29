@@ -6,7 +6,6 @@ namespace ProtrndWebAPI.Models.Posts
     public class PostDTO
     {
         [JsonPropertyName("caption")]
-        [Required(ErrorMessage = "Field cannot be empty")]
         public string Caption { get; set; } = string.Empty;
 
         [JsonPropertyName("uploadurls")]

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MongoDB.Driver.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace ProtrndWebAPI.Models.Payments
@@ -16,24 +17,18 @@ namespace ProtrndWebAPI.Models.Payments
         public string BannerUrl { get; set; } = string.Empty;
         [JsonPropertyName("createdat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        [JsonPropertyName("nextcharge")]
-        public DateTime NextCharge { get; set; } = DateTime.Now.AddDays(1);
-        [JsonPropertyName("useremail")]
+        [JsonPropertyName("expirydate")]
+        public DateTime ExpiryDate { get; set; } = DateTime.Now.AddWeeks(1);
+        [JsonPropertyName("email")]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
         [JsonPropertyName("chargeintervals")]
-        public string ChargeIntervals { get; set; } = "day";
-        [JsonPropertyName("currency")]
-        public string Currency { get; set; } = string.Empty;
+        public string ChargeIntervals { get; set; } = "week";
         [JsonPropertyName("amount")]
         public int Amount { get; set; }
         [JsonPropertyName("audience")]
-        public List<Location> Audience { get; set; } = null!;
+        public Location Audience { get; set; } = null!;
         [JsonPropertyName("disabled")]
         public bool Disabled { get; set; } = false;
-        [JsonPropertyName("authcode")]
-        public string AuthCode { get; set; } = string.Empty;
-        [JsonPropertyName("categories")]
-        public List<string> Categories { get; set; } = new();
     }
 }

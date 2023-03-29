@@ -12,6 +12,9 @@ namespace ProtrndWebAPI.Models.Payments
         [JsonPropertyName("profileid")]
         public Guid ProfileId { get; set; }
 
+        [JsonPropertyName("receiverid")]
+        public Guid ReceiverId { get; set; }
+
         [JsonPropertyName("itemid")]
         public Guid ItemId { get; set; }
 

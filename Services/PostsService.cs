@@ -51,20 +51,17 @@ namespace ProtrndWebAPI.Services
         public async Task<List<Promotion>> GetPromotionsPaginatedAsync(int page, TokenClaims profile)
         {
             var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            if (profileDetail.Location == null)
+                return new List<Promotion>();
             var location = profileDetail.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
             return await _promotionCollection
                 .Find(Builders<Promotion>.Filter
-                .Where(p => p.NextCharge <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience
-                .Where(a => a.State == location[0])
-                .FirstOrDefault() != null || p.Audience
-                .Where(a => a.Cities
-                .Contains(location[1]))
-                .FirstOrDefault() != null))
-                .Skip((page - 1) * 5)
-                .Limit(10).ToListAsync();
+                .Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
+                .Skip((page - 1) * 15)
+                .Limit(15).ToListAsync();
         }
 
         public async Task<bool> PromoteAsync(TokenClaims profile, Promotion promotion)
@@ -80,43 +77,6 @@ namespace ProtrndWebAPI.Services
             {
                 return false;
             }
-        }
-
-        public async Task<long> SendGiftToPostAsync(Post post, int count, Guid userId)
-        {
-            if (post != null && post.AcceptGift)
-            {
-                var filter = Builders<Gift>.Filter.Where(g => g.ProfileId == userId && !g.Disabled);
-                var gifts = await _giftsCollection.Find(filter).ToListAsync();
-                long updateResult = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    var updateBuilder = Builders<Gift>.Update;
-                    var update = updateBuilder.Set(g => g.ProfileId, post.ProfileId).Set(g => g.PostId, post.Identifier);
-                    var updateOne = await _giftsCollection.UpdateOneAsync(filter, update);
-                    updateResult += updateOne.ModifiedCount;
-                }
-                return updateResult;
-            }
-            return 0;
-        }
-
-        public async Task<List<Gift>> GetAllGiftOnPostAsync(Guid postId)
-        {
-            return await _giftsCollection.Find(Builders<Gift>.Filter.Where(s => s.PostId == postId)).ToListAsync();
-        }
-
-        public async Task<List<Profile>> GetGiftersAsync(Guid id)
-        {
-            var profiles = new List<Profile>();
-            var giftNotifications = await _notificationService.GetGiftNotificationsByIdAsync(id.ToString());
-            foreach (var notification in giftNotifications)
-            {
-                var sender = await _profileService.GetProfileByIdAsync(notification.SenderId);
-                if (profiles.Find(p => p.Identifier == sender.Identifier) == null)
-                    profiles.Add(sender);
-            }
-            return profiles;
         }
 
         public async Task<bool> AcceptGift(Guid id)
@@ -151,11 +111,13 @@ namespace ProtrndWebAPI.Services
         public async Task<List<Promotion>> GetPromotionsAsync(TokenClaims profile)
         {
             var profileDetail = await _profileService.GetProfileByIdAsync(profile.ID);
+            if (profileDetail.Location == null)
+                return new List<Promotion>();
             var location = profileDetail.Location.Split(',');
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.NextCharge <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.Where(a => a.State == location[0]).FirstOrDefault() != null || p.Audience.Where(a => a.Cities.Contains(location[1])).FirstOrDefault() != null)).ToListAsync();
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1])).ToListAsync();
         }
 
         public async Task<bool> AddLikeAsync(Like likeDto)
