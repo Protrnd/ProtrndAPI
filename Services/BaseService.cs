@@ -25,6 +25,7 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoCollection<Support> _supportCollection;
         public readonly IMongoCollection<Chat> _chatCollection;
         public readonly IMongoCollection<Conversations> _conversationsCollection;
+        public readonly IMongoCollection<ViewClick> _viewClickCollection;
 
         public BaseService(IOptions<DBSettings> settings)
         {
@@ -45,6 +46,7 @@ namespace ProtrndWebAPI.Services
             _supportCollection = Database.GetCollection<Support>(settings.Value.SupportCollection);
             _chatCollection = Database.GetCollection<Chat>(settings.Value.ChatCollection);
             _conversationsCollection = Database.GetCollection<Conversations>(settings.Value.ConversationsCollection);
+            _viewClickCollection = Database.GetCollection<ViewClick>(settings.Value.ViewClickCollection);
         }
 
         public static string FormatNumber(int number)

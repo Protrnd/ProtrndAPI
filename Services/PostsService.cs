@@ -60,14 +60,14 @@ namespace ProtrndWebAPI.Services
             return await _promotionCollection
                 .Find(Builders<Promotion>.Filter
                 .Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
+                .SortByDescending(p => p.Views)
                 .Skip((page - 1) * 15)
-                .Limit(15).ToListAsync();
+                .Limit(15)
+                .ToListAsync();
         }
 
-        public async Task<bool> PromoteAsync(TokenClaims profile, Promotion promotion)
+        public async Task<bool> PromoteAsync(Promotion promotion)
         {
-            promotion.Identifier = promotion.Id;
-            promotion.ProfileId = profile.ID;
             try
             {
                 await _promotionCollection.InsertOneAsync(promotion);
@@ -76,6 +76,48 @@ namespace ProtrndWebAPI.Services
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public async Task<int> GetViewCountAsync(Guid promoId)
+        {
+            var views = await _viewClickCollection.Find(v => v.PromoId == promoId && v.Viewed).ToListAsync();
+            return views.Count;
+        }
+        
+        public async Task<int> GetClickCountAsync(Guid promoId)
+        {
+            var clicks = await _viewClickCollection.Find(v => v.PromoId == promoId && v.Clicked).ToListAsync();
+            return clicks.Count;
+        }
+
+        public async Task View(ViewClick view)
+        {
+            var viewed = await _viewClickCollection.Find(v => v.PromoId == view.PromoId && v.ProfileId == view.ProfileId && !v.Viewed).SingleOrDefaultAsync();
+            if (viewed == null)
+            {
+                view.Id = Guid.NewGuid();
+                await _viewClickCollection.InsertOneAsync(view);
+                var viewCount = await GetViewCountAsync(view.PromoId);
+                var update = Builders<Promotion>.Update.Set(p => p.Views, viewCount);
+                var filter = Builders<Promotion>.Filter.Where(p => p.Id == view.PromoId);
+                await _promotionCollection.UpdateOneAsync(filter, update);
+            }
+        }
+
+        public async Task Click(ViewClick click)
+        {
+            var clickFilter = Builders<ViewClick>.Filter.Where(v => v.PromoId == click.PromoId && v.ProfileId == click.ProfileId && !v.Clicked);
+            var clicked = await _viewClickCollection.Find(clickFilter).SingleOrDefaultAsync();
+            if (clicked == null)
+            {
+                click.Id = Guid.NewGuid();
+                var viewCount = await GetClickCountAsync(click.PromoId);
+                var update = Builders<Promotion>.Update.Set(p => p.Clicks, viewCount);
+                var filter = Builders<Promotion>.Filter.Where(p => p.Id == click.PromoId);
+                await _promotionCollection.UpdateOneAsync(filter, update);
+                var clickUpdate = Builders<ViewClick>.Update.Set(v => v.Clicked, true);
+                await _viewClickCollection.UpdateOneAsync(clickFilter, clickUpdate);
             }
         }
 
@@ -117,7 +159,9 @@ namespace ProtrndWebAPI.Services
             //30,000 naira paid means promotion is accessible by every user
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1])).ToListAsync();
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
+                .SortByDescending(p => p.Views)
+                .ToListAsync();
         }
 
         public async Task<bool> AddLikeAsync(Like likeDto)

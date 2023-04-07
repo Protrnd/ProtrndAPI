@@ -46,12 +46,55 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = $"Promotions results for page {page}", StatusCode = 200, Data = await _postsService.GetPromotionsPaginatedAsync(page, _profileClaims) });
         }
 
-        //[HttpGet("{id}/gift/profiles")]
-        //public async Task<ActionResult<ActionResponse>> GetGifters(Guid id)
-        //{
-        //    return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound});
-        //    return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetGiftersAsync(id) });
-        //}
+        [HttpGet("promotion/view/count/{id}")]
+        public async Task<ActionResult<ActionResponse>> ViewCount(Guid id)
+        {
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _postsService.GetViewCountAsync(id),
+                StatusCode = 200
+            });
+        }
+
+        [HttpGet("promotion/click/count/{id}")]
+        public async Task<ActionResult<ActionResponse>> ClickCount(Guid id)
+        {
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _postsService.GetClickCountAsync(id),
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("promotion/view")]
+        public async Task<ActionResult> ViewPromotion(ViewClick view)
+        {
+            await _postsService.View(view);
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = "Ok",
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("promotion/click")]
+        public async Task<IActionResult> ClickPromotion(ViewClick click)
+        {
+            await _postsService.Click(click);
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = "Ok",
+                StatusCode = 200
+            });
+        }
 
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)

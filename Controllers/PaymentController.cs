@@ -153,7 +153,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("verify/promotion")]
-        public async Task<ActionResult> VerifyPromotionPayment(VerifyPromotionTransaction promotionTransaction)
+        public async Task<ActionResult<ActionResponse>> VerifyPromotionPayment(VerifyPromotionTransaction promotionTransaction)
         {
             if (_profileClaims == null || _postsService == null || _paymentService == null)
                 return new ObjectResult(new ActionResponse
@@ -183,24 +183,27 @@ namespace ProtrndWebAPI.Controllers
                 var verifyStatus = await _paymentService.InsertTransactionAsync(transaction);
                 if (verifyStatus)
                 {
-                    promotionDto.Email = _profileClaims.Email;
-                    DateTime expiry = DateTime.Now;
+                    DateTime expiry;
                     if (promotionDto.ChargeIntervals == "month")
-                        expiry = DateTime.Now.AddMonths(1);
+                        expiry = DateTime.Now.AddDays(30);
+                    else
+                        expiry = DateTime.Now.AddDays(7);
                     var promotion = new Promotion
                     {
                         CreatedAt = DateTime.Now,
-                        Email = _profileClaims.Email,
+                        Email = promotionDto.Email,
                         PostId = promotionDto.PostId,
-                        Audience = promotionDto.Audience,
+                        Audience = new Location { City = promotionDto.Audience.City, State = promotionDto.Audience.State },
                         Amount = amount,
                         ChargeIntervals = promotionDto.ChargeIntervals,
                         BannerUrl = promotionDto.BannerUrl,
-                        ProfileId = _profileClaims.ID,
+                        ProfileId = promotionDto.ProfileId,
                         ExpiryDate = expiry,
+                        Disabled = false,
+                        Id = Guid.NewGuid()
                     };
                     promotion.Identifier = promotion.Id;
-                    var promotionOk = await _postsService.PromoteAsync(_profileClaims, promotion);
+                    var promotionOk = await _postsService.PromoteAsync(promotion);
                     if (promotionOk)
                     {
                         await _notificationService.PromotionNotification(_profileClaims, promotion.Identifier);

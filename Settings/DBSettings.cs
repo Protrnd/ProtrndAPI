@@ -21,6 +21,7 @@
         public string AccountDetailsCollection { get; set; } = null!;
         public string ChatCollection { get; set; } = null!;
         public string ConversationsCollection { get; set; } = null!;
+        public string ViewClickCollection { get; set; } = null!;
 
     }
 }
