@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ProtrndWebAPI.Models.Posts;
 using ProtrndWebAPI.Services.Network;
 
 namespace ProtrndWebAPI.Controllers
@@ -99,9 +100,15 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("add")]
         public async Task<ActionResult<ActionResponse>> AddPost([FromBody] PostDTO upload)
         {
-            var post = new Post { AcceptGift = false, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profileClaims.ID };
+            var post = new Post { AcceptGift = false, Location = upload.Location, UploadUrls = upload.UploadUrls, Caption = upload.Caption, ProfileId = _profileClaims.ID, Tags = upload.Tags };
             var uploadResult = await _postsService.AddPostAsync(post);
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = uploadResult });
+        }
+
+        [HttpGet("profile/tags")]
+        public async Task<ActionResult<ActionResponse>> GetProfilePostTags(ProfileTagsQuery query)
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = _postsService.GetPostProfileTagsAsync(query.Page, query.ProfileId) });
         }
 
         [HttpGet("{id}")]

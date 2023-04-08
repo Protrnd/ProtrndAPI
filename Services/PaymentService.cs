@@ -33,6 +33,15 @@ namespace ProtrndWebAPI.Services
             return null;
         }
 
+        public async Task<List<Transaction>> GetTransactionsAsync(int page, Guid profileId)
+        {
+            return await _transactionCollection.Find(Builders<Transaction>.Filter.Where(t => t.ProfileId == profileId))
+                .SortByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * 20)
+                .Limit(20)
+                .ToListAsync();
+        }
+
         public async Task<bool> SupportAsync(Support support)
         {
             try

@@ -31,7 +31,7 @@ namespace ProtrndWebAPI.Services.UserSevice
             user.UserName = profile.UserName;
             user.FullName = profile.FullName;
             user.Location = profile.Location;
-            user.Phone = profile.Phone;
+            user.About = profile.About;
             user.BackgroundImageUrl = profile.BackgroundImageUrl;
             user.ProfileImage = profile.ProfileImage;
 

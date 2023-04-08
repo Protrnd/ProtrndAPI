@@ -33,6 +33,15 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<List<Post>> GetPostProfileTagsAsync(int page, Guid profileId)
+        {
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.Tags.Contains(profileId)))
+                .SortByDescending(t => t.Time)
+                .Skip((page - 1) * 10)
+                .Limit(10)
+                .ToListAsync();
+        }
+
         public async Task<List<Post>> GetPostQuery(PostQuery query)
         {
             return await _postsCollection.Find(Builders<Post>.Filter.Where(p => !p.Disabled && p.Caption.Contains(query.Word)))
@@ -156,10 +165,11 @@ namespace ProtrndWebAPI.Services
             if (profileDetail.Location == null)
                 return new List<Promotion>();
             var location = profileDetail.Location.Split(',');
-            //30,000 naira paid means promotion is accessible by every user
+            //30,000 naira paid means promotion is accessible by every user for 1 month
+            //10,000 naira paid means promotion is accessible by every user for 1 month
             //location[0] = State
             //location[1] = City
-            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
+            return await _promotionCollection.Find(Builders<Promotion>.Filter.Where(p => p.ExpiryDate <= DateTime.Now || !p.Disabled || p.Amount == 30000 || p.Amount == 10000 || p.Audience.State == location[0] || p.Audience.City == location[1]))
                 .SortByDescending(p => p.Views)
                 .ToListAsync();
         }

@@ -133,7 +133,6 @@ namespace ProtrndWebAPI.Controllers
             email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse("protrndng@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
-            email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("ifeanyiiiofurum@gmail.com "));
             email.Subject = "Withdrawal request";
             email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Profile ID: <b>{profileId}</b></p>" };
@@ -150,6 +149,12 @@ namespace ProtrndWebAPI.Controllers
             {
                 return "";
             }
+        }
+
+        [HttpGet("transactions/{page}")]
+        public async Task<ActionResult<ActionResponse>> GetTransactionsPaginated(int page)
+        {
+            return Ok(new ActionResponse { Successful = true, Message = $"Transactions results for page {page}", StatusCode = 200, Data = await _paymentService.GetTransactionsAsync(page, _profileClaims.ID) });
         }
 
         [HttpPost("verify/promotion")]

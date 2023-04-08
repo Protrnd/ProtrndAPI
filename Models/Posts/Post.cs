@@ -13,6 +13,8 @@ namespace ProtrndWebAPI.Models.Posts
         public string Caption { get; set; } = string.Empty;
         [JsonPropertyName("uploadurls")]
         public List<string>? UploadUrls { get; set; } = null;
+        [JsonPropertyName("tags")]
+        public List<Guid> Tags { get; set; } = new List<Guid>();
         [JsonPropertyName("location")]
         public Location Location { get; set; } = null!;
         [JsonPropertyName("acceptgift")]

@@ -12,7 +12,7 @@ namespace ProtrndWebAPI.Models.User
         public string AccountType { get; set; } = string.Empty;
         public string BackgroundImageUrl { get; set; } = string.Empty;
         public string? Location { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
+        public string About { get; set; } = string.Empty;
         public string ProfileImage { get; set; } = string.Empty;
     }
 }

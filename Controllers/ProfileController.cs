@@ -49,7 +49,7 @@ namespace ProtrndWebAPI.Controllers
                 UserName = updateProfile.UserName,
                 BackgroundImageUrl = updateProfile.BackgroundImageUrl,
                 ProfileImage = updateProfile.ProfileImage,
-                Phone = updateProfile.Phone,
+                About = updateProfile.About,
                 Location = updateProfile.Location
             };
             var currentProfile = await _profileService.GetProfileByIdAsync(_profileClaims.ID);

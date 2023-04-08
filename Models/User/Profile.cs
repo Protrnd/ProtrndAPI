@@ -21,8 +21,8 @@ namespace ProtrndWebAPI.Models.User
         public string ProfileImage { get; set; } = string.Empty;
         [JsonPropertyName("location")]
         public string Location { get; set; } = string.Empty;
-        [JsonPropertyName("phone")]
-        public string? Phone { get; set; } = null;
+        [JsonPropertyName("about")]
+        public string? About { get; set; } = null;
         [JsonPropertyName("regdate")]
         public DateTime RegistrationDate { get; set; } = DateTime.Now;
         [JsonPropertyName("disabled")]

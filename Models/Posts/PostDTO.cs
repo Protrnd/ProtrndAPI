@@ -13,5 +13,8 @@ namespace ProtrndWebAPI.Models.Posts
 
         [JsonPropertyName("location")]
         public Location Location { get; set; } = null!;
+
+        [JsonPropertyName("tags")]
+        public List<Guid> Tags { get; set; } = new List<Guid>();
     }
 }
