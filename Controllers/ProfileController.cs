@@ -108,18 +108,6 @@ namespace ProtrndWebAPI.Controllers
         public async Task<ActionResult<ActionResponse>> GetFollowingCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowingCount(id) });
-        }        
-
-        [HttpGet("gifts/total")]
-        public async Task<IActionResult> GetGiftTotal()
-        {
-            return NotFound();
-            if (_profileClaims == null)
-            {
-                return BadRequest(new ActionResponse { StatusCode = 401, Message = "Unauthorized" });
-            }
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(_profileClaims.ID) });
-        }
-      
+        }     
     }
 }
