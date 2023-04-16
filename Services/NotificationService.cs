@@ -55,30 +55,16 @@ namespace ProtrndWebAPI.Services
 
         public async Task PromotionNotification(TokenClaims sender, Guid promotionId)
         {
-            var message = "Your promotion is live";
-            await _notificationsCollection.InsertOneAsync(Notification(Guid.Empty, sender.ID, message, "Promotion", promotionId));
+            var message = Constants.Promoted;
+            await _notificationsCollection.InsertOneAsync(Notification(Guid.Empty, sender.ID, message, "Transaction", promotionId));
             return;
         }
 
-        public async Task SupportNotification(Profile sender, Guid receiverId)
+        public async Task SupportNotification(TokenClaims sender, Guid receiverId, Guid postId, int amount)
         {
-            var message = sender.UserName + Constants.Commented;
-            //await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, receiverId, message));
+            var message = sender.UserName + $" supported your post with ₦{amount}";
+            await _notificationsCollection.InsertOneAsync(Notification(sender.ID, receiverId, message, "Transaction", postId));
             return;
-        }
-
-        public async Task<bool> SendGiftNotification(TokenClaims sender, Post post, int amount)
-        {
-            try
-            {
-                var message = sender.UserName + $" sent {amount} in gifts to your post: " + post.Identifier;
-                await _notificationsCollection.InsertOneAsync(Notification(sender.ID, post.ProfileId, message, "post", post.Identifier));
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
         }
 
         public async Task<List<Notification>> GetNotificationsAsync(Guid id, int page)

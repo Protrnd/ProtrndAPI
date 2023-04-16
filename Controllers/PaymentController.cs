@@ -19,10 +19,10 @@ namespace ProtrndWebAPI.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("balance/{profileId}")]
-        public async Task<ActionResult<ActionResponse>> GetTotalBalance(Guid profileId)
+        [HttpGet("balance/{id}")]
+        public async Task<ActionResult<ActionResponse>> GetTotalBalance(Guid id)
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetSupportTotal(profileId) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetSupportTotal(id) });
         }
 
         [HttpPost("support")]
@@ -39,6 +39,7 @@ namespace ProtrndWebAPI.Controllers
             };
             support.Identifier = support.Id;
             var successful = await _paymentService.SupportAsync(support);
+            await _notificationService.SupportNotification(_profileClaims, dto.ReceiverId, dto.PostId, dto.Amount);
             return Ok(new ActionResponse
             {
                 Successful = successful,
