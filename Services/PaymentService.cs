@@ -74,6 +74,7 @@ namespace ProtrndWebAPI.Services
             }
             var support = new Support { Amount = -supportTotal, PostId = Guid.Empty, ReceiverId = profileId, SenderId = Guid.Empty, Reference = GenerateReference().ToString() };
             await _supportCollection.InsertOneAsync(support);
+            await InsertTransactionAsync(new Transaction { Amount = -supportTotal, CreatedAt= DateTime.Now, ItemId = support.Id, ProfileId = profileId, Purpose = "Withdraw Support", ReceiverId = profileId, TrxRef = support.Reference });
             return support.Reference;
         }
 

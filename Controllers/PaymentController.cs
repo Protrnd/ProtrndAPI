@@ -39,6 +39,17 @@ namespace ProtrndWebAPI.Controllers
             };
             support.Identifier = support.Id;
             var successful = await _paymentService.SupportAsync(support);
+            var transaction = new Transaction
+            {
+                Amount = dto.Amount,
+                ProfileId = _profileClaims.ID,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = dto.PostId,
+                Purpose = $"Support sent to post with id = {dto.PostId}"
+            };
+
+            await _paymentService.InsertTransactionAsync(transaction);
             await _notificationService.SupportNotification(_profileClaims, dto.ReceiverId, dto.PostId, dto.Amount);
             return Ok(new ActionResponse
             {
