@@ -2,6 +2,7 @@
 using MimeKit;
 using MongoDB.Driver.Linq;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Services.Network;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
@@ -87,13 +88,13 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("support/withdraw")]
-        public async Task<IActionResult> WithdrawAllSupport()
+        public async Task<IActionResult> WithdrawAllSupport(WithdrawDTO withdraw)
         {
-            var withdrawalReference = await _paymentService.WithdrawSupports(_profileClaims.ID);
+            var withdrawalReference = await _paymentService.WithdrawSupports(_profileClaims.ID, withdraw.Amount);
             if (withdrawalReference != "")
             {
-                SendSupportWithdrawEmail(_profileClaims.Email, withdrawalReference);
-                ReceiveSupportWithdrawEmail(withdrawalReference, _profileClaims.ID);
+                SendSupportWithdrawEmail(_profileClaims.Email, withdrawalReference, withdraw);
+                ReceiveSupportWithdrawEmail(withdrawalReference, _profileClaims.ID, withdraw);
                 return Ok(new ActionResponse
                 {
                     Successful = true,
@@ -111,7 +112,7 @@ namespace ProtrndWebAPI.Controllers
             });
         }
 
-        private string SendSupportWithdrawEmail(string to, string reference)
+        private string SendSupportWithdrawEmail(string to, string reference, WithdrawDTO withdraw)
         {
             var from = _configuration[Constants.NoreplyEmailFrom];
             var connection = _configuration[Constants.NoreplyEmailConnection];
@@ -119,8 +120,8 @@ namespace ProtrndWebAPI.Controllers
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse(to));
-            email.Subject = "Your withdrawal request";
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your request for withdrawal reference is: {reference}. You will receive your payment within 72 hours and if you do not receive it please send an email to us at protrndng@gmail.com. Thank you" };
+            email.Subject = $"Your withdrawal request to withdraw {withdraw.Amount}";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your request for withdrawal reference is: {reference}. <p><b>Your account</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p> <p>You will receive your payment within <b>72 hours</b> and if you do not receive it please send an email to us at protrndng@gmail.com. Thank you</p>" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);
@@ -136,7 +137,7 @@ namespace ProtrndWebAPI.Controllers
             }
         }
 
-        private string ReceiveSupportWithdrawEmail(string reference, Guid profileId)
+        private string ReceiveSupportWithdrawEmail(string reference, Guid profileId, WithdrawDTO withdraw)
         {
             var from = _configuration[Constants.NoreplyEmailFrom];
             var connection = _configuration[Constants.NoreplyEmailConnection];
@@ -146,8 +147,8 @@ namespace ProtrndWebAPI.Controllers
             email.To.Add(MailboxAddress.Parse("protrndng@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("ifeanyiiiofurum@gmail.com "));
-            email.Subject = "Withdrawal request";
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Profile ID: <b>{profileId}</b></p>" };
+            email.Subject = $"Withdrawal request to withdraw {withdraw.Amount}";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Profile ID: <b>{profileId}</b></p><p><b>Withdrawal Account Details</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p>" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);

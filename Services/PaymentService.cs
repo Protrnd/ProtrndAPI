@@ -35,7 +35,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Transaction>> GetTransactionsAsync(int page, Guid profileId)
         {
-            return await _transactionCollection.Find(Builders<Transaction>.Filter.Where(t => t.ProfileId == profileId))
+            return await _transactionCollection.Find(Builders<Transaction>.Filter.Where(t => t.ProfileId == profileId || t.ReceiverId == profileId))
                 .SortByDescending(t => t.CreatedAt)
                 .Skip((page - 1) * 20)
                 .Limit(20)
@@ -65,16 +65,16 @@ namespace ProtrndWebAPI.Services
             return await _supportCollection.Find(s => s.PostId == postId).ToListAsync();
         }
 
-        public async Task<string> WithdrawSupports(Guid profileId)
+        public async Task<string> WithdrawSupports(Guid profileId, int amount)
         {
             var supportTotal = await GetSupportTotal(profileId);
             if (supportTotal <= 0)
             {
                 return "";
             }
-            var support = new Support { Amount = -supportTotal, PostId = Guid.Empty, ReceiverId = profileId, SenderId = Guid.Empty, Reference = GenerateReference().ToString() };
+            var support = new Support { Amount = -amount, PostId = Guid.Empty, ReceiverId = profileId, SenderId = Guid.Empty, Reference = GenerateReference().ToString() };
             await _supportCollection.InsertOneAsync(support);
-            await InsertTransactionAsync(new Transaction { Amount = -supportTotal, CreatedAt= DateTime.Now, ItemId = support.Id, ProfileId = profileId, Purpose = "Withdraw Support", ReceiverId = profileId, TrxRef = support.Reference });
+            await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt= DateTime.Now, ItemId = support.Id, ProfileId = profileId, Purpose = $"Withdraw {amount} from support", ReceiverId = profileId, TrxRef = support.Reference });
             return support.Reference;
         }
 
