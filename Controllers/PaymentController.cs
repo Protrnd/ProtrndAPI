@@ -128,7 +128,7 @@ namespace ProtrndWebAPI.Controllers
             var funds = new Funds
             {
                 ProfileId = dto.ProfileId,
-                Amount = -dto.Amount,
+                Amount = dto.Amount,
                 Time = DateTime.Now,
                 Reference = dto.Reference
             };
