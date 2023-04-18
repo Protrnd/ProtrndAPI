@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MimeKit;
-using MongoDB.Driver.Linq;
 using ProtrndWebAPI.Models.Payments;
-using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Services.Network;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
@@ -23,10 +21,10 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet("balance/{id}")]
         public async Task<ActionResult<ActionResponse>> GetTotalBalance(Guid id)
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetSupportTotal(id) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetFundsTotal(id) });
         }
 
-        [HttpPost("support")]
+        [HttpPost("support/transfer")]
         public async Task<IActionResult> Support(SupportDTO dto)
         {
             var support = new Support
@@ -40,13 +38,16 @@ namespace ProtrndWebAPI.Controllers
             };
             support.Identifier = support.Id;
             var successful = await _paymentService.SupportAsync(support);
+            await _paymentService.TopUpFunds(new Funds { Amount = dto.Amount * 0.9, ProfileId = dto.ReceiverId, Reference = dto.Reference, Time = DateTime.Now });
+
             var transaction = new Transaction
             {
                 Amount = dto.Amount,
                 ProfileId = _profileClaims.ID,
+                ReceiverId = dto.ReceiverId,
                 CreatedAt = DateTime.Now,
                 TrxRef = Generate().ToString(),
-                ItemId = dto.PostId,
+                ItemId = support.Id,
                 Purpose = $"Support sent to post with id = {dto.PostId}"
             };
 
@@ -57,6 +58,100 @@ namespace ProtrndWebAPI.Controllers
                 Successful = successful,
                 Message = "OK",
                 Data = "Support",
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("support/virtual")]
+        public async Task<IActionResult> VirtualSupport(SupportDTO dto)
+        {
+            await Support(dto);
+            var success = await _paymentService.TransferSupportFromBalance(_profileClaims.ID, dto.Amount);
+
+            return Ok(new ActionResponse
+            {
+                Successful = success != "",
+                Message = "OK",
+                Data = "Support",
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("topup")]
+        public async Task<IActionResult> TopUp(FundsDTO dto)
+        {
+            var funds = new Funds
+            {
+                ProfileId = _profileClaims.ID,
+                Amount = dto.Amount,
+                Time = DateTime.Now,
+                Reference = dto.Reference
+            };
+
+            var successful = await _paymentService.TopUpFunds(funds);
+
+            var transaction = new Transaction
+            {
+                Amount = dto.Amount,
+                ProfileId = _profileClaims.ID,
+                CreatedAt = DateTime.Now,
+                TrxRef = funds.Reference,
+                ItemId = _profileClaims.ID,
+                Purpose = $"Topup ₦{dto.Amount}"
+            };
+
+            await _paymentService.InsertTransactionAsync(transaction);
+            //await _notificationService.SupportNotification(_profileClaims, dto.ReceiverId, dto.PostId, dto.Amount);
+            return Ok(new ActionResponse
+            {
+                Successful = successful,
+                Message = "OK",
+                Data = "Topup",
+                StatusCode = 200
+            });
+        }
+
+        [HttpPost("balance/to")]
+        public async Task<IActionResult> SendFromBalance(FundsDTO dto)
+        {
+
+            var transfer = await _paymentService.TransferFromBalance(_profileClaims.ID, dto.Amount);
+            if (transfer == "")
+                return BadRequest(new ActionResponse
+                {
+                    Successful = false,
+                    Message = "Insufficient Funds",
+                    Data = "Protrnd transfer",
+                    StatusCode = 200
+                });
+
+            var funds = new Funds
+            {
+                ProfileId = dto.ProfileId,
+                Amount = -dto.Amount,
+                Time = DateTime.Now,
+                Reference = dto.Reference
+            };
+
+            var successful = await _paymentService.TopUpFunds(funds);
+
+            var transaction = new Transaction
+            {
+                Amount = dto.Amount,
+                ProfileId = dto.ProfileId,
+                CreatedAt = DateTime.Now,
+                TrxRef = Generate().ToString(),
+                ItemId = funds.Id,
+                Purpose = $"Receive ₦{dto.Amount} from @{_profileClaims.UserName}"
+            };
+
+            await _paymentService.InsertTransactionAsync(transaction);
+
+            return Ok(new ActionResponse
+            {
+                Successful = successful,
+                Message = "OK",
+                Data = "Protrnd transfer",
                 StatusCode = 200
             });
         }
@@ -87,14 +182,14 @@ namespace ProtrndWebAPI.Controllers
             });
         }
 
-        [HttpPost("support/withdraw")]
+        [HttpPost("funds/withdraw")]
         public async Task<IActionResult> WithdrawAllSupport(WithdrawDTO withdraw)
         {
-            var withdrawalReference = await _paymentService.WithdrawSupports(_profileClaims.ID, withdraw.Amount);
+            var withdrawalReference = await _paymentService.WithdrawFunds(_profileClaims.ID, withdraw.Amount);
             if (withdrawalReference != "")
             {
-                SendSupportWithdrawEmail(_profileClaims.Email, withdrawalReference, withdraw);
-                ReceiveSupportWithdrawEmail(withdrawalReference, _profileClaims.ID, withdraw);
+                SendWithdrawEmail(_profileClaims.Email, withdrawalReference, withdraw);
+                ReceiveWithdrawEmail(withdrawalReference, _profileClaims.ID, withdraw);
                 return Ok(new ActionResponse
                 {
                     Successful = true,
@@ -112,7 +207,7 @@ namespace ProtrndWebAPI.Controllers
             });
         }
 
-        private string SendSupportWithdrawEmail(string to, string reference, WithdrawDTO withdraw)
+        private string SendWithdrawEmail(string to, string reference, WithdrawDTO withdraw)
         {
             var from = _configuration[Constants.NoreplyEmailFrom];
             var connection = _configuration[Constants.NoreplyEmailConnection];
@@ -120,8 +215,8 @@ namespace ProtrndWebAPI.Controllers
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse(to));
-            email.Subject = $"Your withdrawal request to withdraw {withdraw.Amount}";
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your request for withdrawal reference is: {reference}. <p><b>Your account</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p> <p>You will receive your payment within <b>72 hours</b> and if you do not receive it please send an email to us at protrndng@gmail.com. Thank you</p>" };
+            email.Subject = $"Your withdrawal request to withdraw ₦{withdraw.Amount}";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Your request for withdrawal reference is: {reference}. <p><b>Your account</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p><p>Please be informed that you will receive <b>₦{withdraw.Amount - (withdraw.Amount * 0.05)}</b> and Protrnd will receive <b>₦{withdraw.Amount * 0.05}</b></p> <p>You will receive your payment within <b>72 hours</b> and if you do not receive it please send an email to us at protrndng@gmail.com. Thank you</p>" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);
@@ -137,7 +232,7 @@ namespace ProtrndWebAPI.Controllers
             }
         }
 
-        private string ReceiveSupportWithdrawEmail(string reference, Guid profileId, WithdrawDTO withdraw)
+        private string ReceiveWithdrawEmail(string reference, Guid profileId, WithdrawDTO withdraw)
         {
             var from = _configuration[Constants.NoreplyEmailFrom];
             var connection = _configuration[Constants.NoreplyEmailConnection];
@@ -147,8 +242,8 @@ namespace ProtrndWebAPI.Controllers
             email.To.Add(MailboxAddress.Parse("protrndng@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("ifeanyiiiofurum@gmail.com "));
-            email.Subject = $"Withdrawal request to withdraw {withdraw.Amount}";
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Profile ID: <b>{profileId}</b></p><p><b>Withdrawal Account Details</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p>" };
+            email.Subject = $"Withdrawal request to withdraw ₦{withdraw.Amount}";
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Please note that the user will receive <b>₦{withdraw.Amount - (withdraw.Amount * 0.05)}</b></p> <p>Profile ID: <b>{profileId}</b></p><p><b>Withdrawal Account Details</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p>" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);

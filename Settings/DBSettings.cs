@@ -22,6 +22,7 @@
         public string ChatCollection { get; set; } = null!;
         public string ConversationsCollection { get; set; } = null!;
         public string ViewClickCollection { get; set; } = null!;
+        public string FundsCollection { get; set; } = null!;
 
     }
 }

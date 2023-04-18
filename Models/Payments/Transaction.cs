@@ -19,7 +19,7 @@ namespace ProtrndWebAPI.Models.Payments
         public Guid ItemId { get; set; }
 
         [JsonPropertyName("amount")]
-        public int Amount { get; set; }
+        public double Amount { get; set; }
 
         [JsonPropertyName("purpose")]
         public string Purpose { get; set; }

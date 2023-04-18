@@ -55,9 +55,38 @@ namespace ProtrndWebAPI.Services
             }
         }
 
+        public async Task<bool> TopUpFunds(Funds funds)
+        {
+            try
+            {
+                await _fundsCollection.InsertOneAsync(funds);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<double> GetFundsTotal(Guid profileId)
+        {
+            var supports = await GetAllFunds(profileId);
+            var total = 0d;
+            foreach (var support in supports)
+            {
+                total += support.Amount;
+            }
+            return total;
+        }
+
         public async Task<List<Support>> GetAllSupports(Guid profileId)
         {
             return await _supportCollection.Find(s => s.ReceiverId == profileId).ToListAsync();
+        }
+
+        public async Task<List<Funds>> GetAllFunds(Guid profileId)
+        {
+            return await _fundsCollection.Find(s => s.ProfileId == profileId).ToListAsync();
         }
 
         public async Task<List<Support>> GetSupportsOnPost(Guid postId)
@@ -65,17 +94,45 @@ namespace ProtrndWebAPI.Services
             return await _supportCollection.Find(s => s.PostId == postId).ToListAsync();
         }
 
-        public async Task<string> WithdrawSupports(Guid profileId, int amount)
+        public async Task<string> WithdrawFunds(Guid profileId, int amount)
         {
-            var supportTotal = await GetSupportTotal(profileId);
+            var supportTotal = await GetFundsTotal(profileId);
             if (supportTotal <= 0)
             {
                 return "";
             }
-            var support = new Support { Amount = -amount, PostId = Guid.Empty, ReceiverId = profileId, SenderId = Guid.Empty, Reference = GenerateReference().ToString() };
-            await _supportCollection.InsertOneAsync(support);
-            await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt= DateTime.Now, ItemId = support.Id, ProfileId = profileId, Purpose = $"Withdraw {amount} from support", ReceiverId = profileId, TrxRef = support.Reference });
-            return support.Reference;
+            var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString(), Time = DateTime.Now };
+            await _fundsCollection.InsertOneAsync(funds);
+            await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt= DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Withdraw ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
+            return funds.Reference;
+        }
+
+        public async Task<string> TransferFromBalance(Guid profileId, double amount)
+        {
+            var fundsTotal = await GetFundsTotal(profileId);
+            if (fundsTotal <= 0)
+            {
+                return "";
+            }
+            else
+            {
+                var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString() };
+                await _fundsCollection.InsertOneAsync(funds);
+                await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Transfer ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
+                return funds.Reference;
+            }
+        }
+
+        public async Task<string> TransferSupportFromBalance(Guid profileId, double amount)
+        {
+            var fundsTotal = await GetFundsTotal(profileId);
+            if (fundsTotal <= 0)
+            {
+                return "";
+            }
+            var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString() };
+            await _fundsCollection.InsertOneAsync(funds);
+            return funds.Reference;
         }
 
         public async Task<int> GetSupportTotal(Guid profileId)
