@@ -106,9 +106,9 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("profile/tags")]
-        public async Task<ActionResult<ActionResponse>> GetProfilePostTags(ProfileTagsQuery query)
+        public async Task<ActionResult<ActionResponse>> GetProfilePostTags([FromQuery] ProfileTagsQuery query)
         {
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = _postsService.GetPostProfileTagsAsync(query.Page, query.ProfileId) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _postsService.GetPostProfileTagsAsync(query.Page, query.ProfileId) });
         }
 
         [HttpGet("{id}")]
