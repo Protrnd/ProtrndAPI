@@ -21,16 +21,17 @@ namespace ProtrndWebAPI.Services
             var conversation = await GetConversationAsync(chat.ReceiverId);
             if (conversation.Count > 0)
             {
-                conversation[0].Time = DateTime.Now;
+                var newConversation = conversation[0];
+                newConversation.Time = DateTime.Now;
                 var find = Builders<Conversations>.Filter.Eq(c => c.Senderid, chat.SenderId);
-                conversation[0].RecentMessage = chat.Message;
-                conversation[0].Senderid = chat.SenderId;
-                conversation[0].ReceiverId = chat.ReceiverId;
-                var updateResult = await _conversationsCollection.ReplaceOneAsync(find, conversation[0]);
+                newConversation.RecentMessage = chat.Message;
+                newConversation.Senderid = chat.SenderId;
+                newConversation.ReceiverId = chat.ReceiverId;
+                var updateResult = await _conversationsCollection.ReplaceOneAsync(find, newConversation);
                 return updateResult.ModifiedCount > 0;
             } else
             {
-                await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId= chat.ReceiverId, Senderid = chat.SenderId });
+                await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId= chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
                 return true;
             }
         }
