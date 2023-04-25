@@ -5,12 +5,13 @@ namespace ProtrndWebAPI.Controllers
 {
     [Route("api/chat")]
     [ApiController]
+    [ProTrndAuthorizationFilter]
     public class ChatController : BaseController
     {
         public ChatController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         [HttpPost("send")]
-        public async Task<IActionResult> SendChat(ChatDTO chat)
+        public async Task<ActionResult<ActionResponse>> SendChat(ChatDTO chat)
         {
             return Ok(new ActionResponse
             {

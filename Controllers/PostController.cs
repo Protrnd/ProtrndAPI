@@ -72,7 +72,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("promotion/view")]
-        public async Task<ActionResult> ViewPromotion(ViewClick view)
+        public async Task<ActionResult<ActionResponse>> ViewPromotion(ViewClick view)
         {
             await _postsService.View(view);
             return Ok(new ActionResponse
@@ -85,7 +85,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("promotion/click")]
-        public async Task<IActionResult> ClickPromotion(ViewClick click)
+        public async Task<ActionResult<ActionResponse>> ClickPromotion(ViewClick click)
         {
             await _postsService.Click(click);
             return Ok(new ActionResponse
