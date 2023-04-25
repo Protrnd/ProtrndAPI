@@ -10,7 +10,9 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Conversations>> GetConversationAsync(Guid profileId)
         {
-            return await _conversationsCollection.Find(c => c.Senderid == profileId || c.ReceiverId == profileId).ToListAsync();
+            return await _conversationsCollection.Find(c => c.Senderid == profileId || c.ReceiverId == profileId)
+                .SortByDescending(c => c.Time)
+                .ToListAsync();
         }
 
         public async Task<bool> SendChat(Chat chat)
@@ -34,6 +36,7 @@ namespace ProtrndWebAPI.Services
         public async Task<List<Chat>> GetChatsFromUser(Guid senderId, Guid receiverId)
         {
             return await _chatCollection.Find(c => c.SenderId == senderId && c.ReceiverId == receiverId)
+                .SortByDescending(c => c.Time)
                 .ToListAsync();
         }
 
