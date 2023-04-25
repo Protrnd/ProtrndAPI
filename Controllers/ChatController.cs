@@ -12,7 +12,7 @@ namespace ProtrndWebAPI.Controllers
         public ChatController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         [HttpPost("send")]
-        public async Task<ActionResult<ActionResponse>> SendChat(ChatDTO chat)
+        public async Task<ActionResult<ActionResponse>> SendChat([FromBody] ChatDTO chat)
         {
             return Ok(new ActionResponse
             {
