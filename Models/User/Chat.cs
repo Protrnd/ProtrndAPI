@@ -15,8 +15,8 @@ namespace ProtrndWebAPI.Models.User
         public bool Seen { get; set; } = false;
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
-        [JsonPropertyName("postid")]
-        public Guid PostId { get; set; } = Guid.Empty;
+        [JsonPropertyName("itemid")]
+        public Guid? ItemId { get; set; } = null;
         [JsonPropertyName("type")]
         public string Type { get; set; } = "chat";
     }

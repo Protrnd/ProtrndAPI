@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ProtrndWebAPI.Models.Payments;
 
 namespace ProtrndWebAPI.Controllers
 {
@@ -11,25 +12,44 @@ namespace ProtrndWebAPI.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendChat(ChatDTO chat)
         {
-            return Ok(await _chatService.SendChat(new Chat
+            return Ok(new ActionResponse
             {
-                ReceiverId = chat.ReceiverId,
-                SenderId = _profileClaims.ID,
-                Message = chat.Message,
-                Type = chat.Type
-            }));
+                Successful = true,
+                Message = "OK",
+                Data = await _chatService.SendChat(new Chat
+                {
+                    ReceiverId = chat.ReceiverId,
+                    SenderId = _profileClaims.ID,
+                    Message = chat.Message,
+                    ItemId = chat.ItemId,
+                    Type = chat.Type
+                }),
+                StatusCode = 200
+            });
         }
 
         [HttpGet("conversations")]
         public async Task<IActionResult> GetConversations()
         {
-            return Ok(await _chatService.GetConversationAsync(_profileClaims.ID));
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _chatService.GetConversationAsync(_profileClaims.ID),
+                StatusCode = 200
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetChats(Guid id)
         {
-            return Ok(await _chatService.GetChatsFromUser(_profileClaims.ID, id));
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _chatService.GetChatsFromUser(_profileClaims.ID, id),
+                StatusCode = 200
+            });
         }
 
         [HttpDelete("delete/{id}")]

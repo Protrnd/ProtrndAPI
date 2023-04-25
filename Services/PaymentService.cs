@@ -107,7 +107,7 @@ namespace ProtrndWebAPI.Services
             return funds.Reference;
         }
 
-        public async Task<string> TransferFromBalance(Guid profileId, double amount)
+        public async Task<string> TransferFromBalance(Guid profileId, double amount, Profile receiverProfile, string reference)
         {
             var fundsTotal = await GetFundsTotal(profileId);
             if (fundsTotal <= 0)
@@ -116,9 +116,9 @@ namespace ProtrndWebAPI.Services
             }
             else
             {
-                var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString() };
+                var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = reference };
                 await _fundsCollection.InsertOneAsync(funds);
-                await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Transfer ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
+                await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Transfer ₦{amount} to @{receiverProfile.UserName}", ReceiverId = receiverProfile.Id, TrxRef = funds.Reference });
                 return funds.Reference;
             }
         }
