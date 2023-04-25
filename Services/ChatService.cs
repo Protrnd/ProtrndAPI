@@ -23,7 +23,7 @@ namespace ProtrndWebAPI.Services
             {
                 var newConversation = conversation[0];
                 newConversation.Time = chat.Time;
-                var find = Builders<Conversations>.Filter.Eq(c => c.Senderid, chat.SenderId);
+                var find = Builders<Conversations>.Filter.Where(c => c.Senderid == chat.SenderId && c.ReceiverId == chat.ReceiverId || c.Senderid == chat.ReceiverId && c.ReceiverId == chat.SenderId);
                 newConversation.RecentMessage = chat.Message;
                 newConversation.Senderid = chat.SenderId;
                 newConversation.ReceiverId = chat.ReceiverId;
