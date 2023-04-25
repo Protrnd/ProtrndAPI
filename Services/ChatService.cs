@@ -23,8 +23,10 @@ namespace ProtrndWebAPI.Services
             {
                 conversation[0].Time = DateTime.Now;
                 var find = Builders<Conversations>.Filter.Eq(c => c.Senderid, chat.SenderId);
-                var update = Builders<Conversations>.Update.Set(c => c.Time, DateTime.Now).Set(c => c.RecentMessage, chat.Message);
-                var updateResult = await _conversationsCollection.UpdateOneAsync(find, update);
+                conversation[0].RecentMessage = chat.Message;
+                conversation[0].Senderid = chat.SenderId;
+                conversation[0].ReceiverId = chat.ReceiverId;
+                var updateResult = await _conversationsCollection.ReplaceOneAsync(find, conversation[0]);
                 return updateResult.ModifiedCount > 0;
             } else
             {
