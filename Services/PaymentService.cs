@@ -42,6 +42,11 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<Transaction> GetTransactionByIdAsync(Guid id)
+        {
+            return await _transactionCollection.Find(Builders<Transaction>.Filter.Eq(t => t.Id, id)).SingleOrDefaultAsync();
+        }
+
         public async Task<bool> SupportAsync(Support support)
         {
             try

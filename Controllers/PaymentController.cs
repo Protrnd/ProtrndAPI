@@ -265,6 +265,12 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, Message = $"Transactions results for page {page}", StatusCode = 200, Data = await _paymentService.GetTransactionsAsync(page, _profileClaims.ID) });
         }
 
+        [HttpGet("transaction/{id}")]
+        public async Task<ActionResult<ActionResponse>> GetTransactionById(Guid id)
+        {
+            return Ok(new ActionResponse { Successful = true, Message = $"Transaction data for {id}", StatusCode = 200, Data = await _paymentService.GetTransactionByIdAsync(id) });
+        }
+
         [HttpPost("verify/promotion")]
         public async Task<ActionResult<ActionResponse>> VerifyPromotionPayment(VerifyPromotionTransaction promotionTransaction)
         {
