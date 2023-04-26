@@ -106,7 +106,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 Successful = successful,
                 Message = "OK",
-                Data = "Topup",
+                Data = transaction.Id,
                 StatusCode = 200
             });
         }
@@ -151,7 +151,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 Successful = successful,
                 Message = "OK",
-                Data = "Protrnd transfer",
+                Data = transaction.Id,
                 StatusCode = 200
             });
         }
