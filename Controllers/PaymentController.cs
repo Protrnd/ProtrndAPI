@@ -137,6 +137,7 @@ namespace ProtrndWebAPI.Controllers
 
             var transaction = new Transaction
             {
+                Id = Guid.NewGuid(),
                 Amount = dto.Amount,
                 ProfileId = dto.ProfileId,
                 CreatedAt = DateTime.Now,
@@ -262,7 +263,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet("transactions/{page}")]
         public async Task<ActionResult<ActionResponse>> GetTransactionsPaginated(int page)
         {
-            return Ok(new ActionResponse { Successful = true, Message = $"Transactions results for page {page}", StatusCode = 200, Data = await _paymentService.GetTransactionsAsync(page, _profileClaims.ID) });
+            return Ok(new ActionResponse { Successful = true, Message = $"Transactions results for page {page}", StatusCode = 200, Data = await _paymentService.GetTransactionsAsync(page, _profileClaims.ID, _profileClaims.UserName) });
         }
 
         [HttpGet("transaction/{id}")]

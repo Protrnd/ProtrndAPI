@@ -38,7 +38,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Chat>> GetChatsFromUser(Guid senderId, Guid receiverId)
         {
-            return await _chatCollection.Find(c => c.SenderId == senderId && c.ReceiverId == receiverId)
+            return await _chatCollection.Find(c => c.SenderId == senderId && c.ReceiverId == receiverId || c.ReceiverId == senderId && c.SenderId == receiverId)
                 .SortByDescending(c => c.Time)
                 .ToListAsync();
         }

@@ -33,9 +33,9 @@ namespace ProtrndWebAPI.Services
             return null;
         }
 
-        public async Task<List<Transaction>> GetTransactionsAsync(int page, Guid profileId)
+        public async Task<List<Transaction>> GetTransactionsAsync(int page, Guid profileId, string username)
         {
-            return await _transactionCollection.Find(Builders<Transaction>.Filter.Where(t => t.ProfileId == profileId || t.ReceiverId == profileId))
+            return await _transactionCollection.Find(Builders<Transaction>.Filter.Where(t => t.ProfileId == profileId || t.ReceiverId == profileId || !t.Purpose.Contains(username)))
                 .SortByDescending(t => t.CreatedAt)
                 .Skip((page - 1) * 20)
                 .Limit(20)
