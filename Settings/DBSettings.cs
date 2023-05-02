@@ -23,6 +23,7 @@
         public string ConversationsCollection { get; set; } = null!;
         public string ViewClickCollection { get; set; } = null!;
         public string FundsCollection { get; set; } = null!;
+        public string PinCollection { get; set; } = null!;
 
     }
 }

@@ -24,6 +24,21 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetFundsTotal(id) });
         }
 
+        [HttpPost("set/{pin}")]
+        public async Task<ActionResult<ActionResponse>> SetPaymentPin(string pin)
+        {
+            if (pin.Length < 4)
+                return BadRequest(new ActionResponse { Data = "", Message = "Invalid Pin less that 4 digits", StatusCode = 400, Successful = false });
+            var setPin = await _paymentService.SetPin(pin, _profileClaims.ID);
+            return Ok(new ActionResponse { Data = setPin, Message = "Pin updated", StatusCode = 200, Successful = true });
+        }
+
+        [HttpGet("correct/{pin}")]
+        public async Task<ActionResult<ActionResponse>> IsPinCorrect(string pin)
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.IsPinCorrect(pin, _profileClaims.ID), Message = "Is Pin Correct Response", StatusCode = 200, Successful = true });
+        }
+
         [HttpPost("support/transfer")]
         public async Task<IActionResult> Support(SupportDTO dto)
         {

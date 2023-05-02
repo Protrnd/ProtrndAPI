@@ -27,6 +27,7 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoCollection<Conversations> _conversationsCollection;
         public readonly IMongoCollection<ViewClick> _viewClickCollection;
         public readonly IMongoCollection<Funds> _fundsCollection;
+        public readonly IMongoCollection<PaymentPin> _pinCollection;
 
         public BaseService(IOptions<DBSettings> settings)
         {
@@ -49,6 +50,7 @@ namespace ProtrndWebAPI.Services
             _conversationsCollection = Database.GetCollection<Conversations>(settings.Value.ConversationsCollection);
             _viewClickCollection = Database.GetCollection<ViewClick>(settings.Value.ViewClickCollection);
             _fundsCollection = Database.GetCollection<Funds>(settings.Value.FundsCollection);
+            _pinCollection = Database.GetCollection<PaymentPin>(settings.Value.PinCollection);
         }
 
         public static string FormatNumber(int number)

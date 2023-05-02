@@ -15,23 +15,23 @@ namespace ProtrndWebAPI.Services
         {
         }
 
-        public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account)
-        {
-            var accountExists = await GetAccountDetails(account.AccountNumber);
-            AccountDetails? accountDetails;
-            if (accountExists == null)
-            {
-                accountDetails = new AccountDetails { AccountNumber = account.AccountNumber, ProfileId = account.ProfileId };
-                await _accountDetailsCollection.InsertOneAsync(accountDetails);
-            }
-            else
-            {
-                accountDetails = accountExists;
-            }
-            if (accountDetails != null)
-                return accountDetails;
-            return null;
-        }
+        //public async Task<AccountDetails?> AddAccountDetailsAsync(AccountDetailsDTO account)
+        //{
+        //    var accountExists = await GetAccountDetails(account.AccountNumber);
+        //    AccountDetails? accountDetails;
+        //    if (accountExists == null)
+        //    {
+        //        accountDetails = new AccountDetails { AccountNumber = account.AccountNumber, ProfileId = account.ProfileId };
+        //        await _accountDetailsCollection.InsertOneAsync(accountDetails);
+        //    }
+        //    else
+        //    {
+        //        accountDetails = accountExists;
+        //    }
+        //    if (accountDetails != null)
+        //        return accountDetails;
+        //    return null;
+        //}
 
         public async Task<List<Transaction>> GetTransactionsAsync(int page, Guid profileId, string username)
         {
@@ -163,6 +163,48 @@ namespace ProtrndWebAPI.Services
             return details;
         }
 
+        public async Task<string> SetPin(string pin, Guid profileId)
+        {
+            var pinResult = await _pinCollection.Find(p => p.ProfileId == profileId).FirstOrDefaultAsync();
+            CreateHash(pin, out byte[] pinHash, out byte[] pinSalt);
+            if (pinResult != null)
+            {
+                pinResult.PaymentPinSalt = pinSalt;
+                pinResult.PaymentPinHash = pinHash;
+                var filter = Builders<PaymentPin>.Filter.Eq(p => p.ProfileId, profileId);
+                await _pinCollection.ReplaceOneAsync(filter, pinResult);
+            } 
+            else
+            {
+                await _pinCollection.InsertOneAsync(new PaymentPin { PaymentPinHash = pinHash, PaymentPinSalt = pinSalt, ProfileId = profileId });
+            }
+            return pin;
+        }
+
+        public async Task<bool> IsPinCorrect(string pin, Guid profileId)
+        {
+            var pinResult = await _pinCollection.Find(p => p.ProfileId == profileId).FirstOrDefaultAsync();
+            if (pinResult != null)
+            {
+                if (VerifyHash(pinResult.PaymentPinSalt, pin, pinResult.PaymentPinHash))
+                    return true;
+            }
+            return false;
+        }
+
+        private static void CreateHash(string plaintext, out byte[] hash, out byte[] salt)
+        {
+            using var hmac = new HMACSHA512();
+            salt = hmac.Key;
+            hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(plaintext));
+        }
+
+        private static bool VerifyHash(byte[] salt, string plaintext, byte[] hash)
+        {
+            using var hmac = new HMACSHA512(salt);
+            var computeHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(plaintext));
+            return computeHash.SequenceEqual(hash);
+        }
         //private static string EncryptDataWithAes(string plainText, string token)
         //{
         //    byte[] inputArray = Encoding.UTF8.GetBytes(plainText);
