@@ -192,6 +192,12 @@ namespace ProtrndWebAPI.Services
             return false;
         }
 
+        public async Task<bool> PaymentPinExists(Guid profileId)
+        {
+            var pinResult = await _pinCollection.Find(p => p.ProfileId == profileId).FirstOrDefaultAsync();
+            return pinResult != null;
+        }
+
         private static void CreateHash(string plaintext, out byte[] hash, out byte[] salt)
         {
             using var hmac = new HMACSHA512();

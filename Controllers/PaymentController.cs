@@ -39,6 +39,12 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Data = await _paymentService.IsPinCorrect(pin, _profileClaims.ID), Message = "Is Pin Correct Response", StatusCode = 200, Successful = true });
         }
 
+        [HttpGet("get/pin")]
+        public async Task<ActionResult<ActionResponse>> GetPaymentPin()
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.PaymentPinExists(_profileClaims.ID), Message = "Pin Exists Response", StatusCode = 200, Successful = true });
+        }
+
         [HttpPost("support/transfer")]
         public async Task<IActionResult> Support(SupportDTO dto)
         {
