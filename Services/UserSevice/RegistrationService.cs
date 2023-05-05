@@ -35,7 +35,7 @@ namespace ProtrndWebAPI.Services.UserSevice
 
         public async Task<Register?> FindRegisteredUserAsync(ProfileDTO register)
         {
-            return await _registrationCollection.Find(r => r.Email == register.Email.Trim().ToLower() || r.UserName == register.UserName.Trim().ToLower() && r.AccountType != Constants.Disabled).FirstOrDefaultAsync();            
+            return await _registrationCollection.Find(r => r.Email == register.Email.Trim().ToLower() || r.UserName == register.UserName.Trim().ToLower() && r.AccountType != Constants.Disabled).FirstOrDefaultAsync();
         }
 
         public async Task<Register?> FindRegisteredUserByEmailAsync(Login login)

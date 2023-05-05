@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
-using ProtrndWebAPI.Settings;
 using MongoDB.Driver;
-using ProtrndWebAPI.Models.User;
+using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
 {
-    public class SearchService: BaseService
+    public class SearchService : BaseService
     {
         public SearchService(IOptions<DBSettings> settings) : base(settings) { }
 

@@ -6,5 +6,6 @@
         public string Email { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public bool Disabled { get; set; } = false;
+        public string Role { get; set; } = string.Empty;
     }
 }

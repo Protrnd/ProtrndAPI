@@ -61,6 +61,8 @@ namespace ProtrndWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ActionResponse>> Register(RegisterDTO request)
         {
+            if (request.AccountType == Constants.Admin)
+                return Unauthorized(new ActionResponse { Successful = false, Data = "Unauthorized Request", Message = "User does not have the right permissions", StatusCode = 401 });
             var userExists = await GetUserResult(new ProfileDTO
             {
                 Email = request.Email,
@@ -85,7 +87,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("forgot-password")]
         [AllowAnonymous]
-        public async Task<ActionResult<ActionResponse>> ForgotPassword([FromBody]Login login)
+        public async Task<ActionResult<ActionResponse>> ForgotPassword([FromBody] Login login)
         {
             var userExists = await GetUserResult(new ProfileDTO { Email = login.Email });
             if (userExists == null)
@@ -150,6 +152,8 @@ namespace ProtrndWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ActionResponse>> VerifyOTP(VerifyOTPSalt verify)
         {
+            if (verify.RegisterDto.AccountType == Constants.Admin)
+                return Unauthorized(new ActionResponse { Successful = false, Data = "Unauthorized Request", Message = "User does not have the right permissions", StatusCode = 401 });
             var otp = DecryptDataWithAes(verify.OTPHash, _configuration[Constants.OTPEncryptionRoute]);
             if (_regService == null || otp != verify.PlainText)
                 return new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid otp inserted", Successful = false, Data = false }) { StatusCode = 403 };
@@ -185,6 +189,19 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Login Successful", Data = await LoginUser(result, type) });
         }
 
+        [HttpPost("admin/login/{type}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ActionResponse>> AdminLogin(string type, [FromBody] Login login)
+        {
+            var result = await _regService.FindRegisteredUserByEmailAsync(login);
+            if (result == null || result.AccountType != Constants.Admin)
+                return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
+            if (!VerifyHash(result.PasswordSalt, login.Password, result.PasswordHash))
+                return BadRequest(new ActionResponse { StatusCode = 400, Message = Constants.WrongEmailPassword });
+
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Admin Login Successful", Data = await LoginUser(result, type) });
+        }
+
         [HttpPost("logout")]
         [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> Logout()
@@ -212,14 +229,20 @@ namespace ProtrndWebAPI.Controllers
                     new Claim(Constants.ID, user.Id.ToString()),
                     new Claim(Constants.UserName, user.UserName.ToString()),
                     new Claim(Constants.Email, user.Email.ToString()),
-                    new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString())
+                    new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString()),
+                    new Claim(Constants.Role, user.AccountType)
                 };
 
+            return await ReturnCookieType(type, claims);
+        }
+
+        private async Task<string> ReturnCookieType(string type, List<Claim> claims)
+        {
             if (type == "cookie")
             {
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, AllowRefresh = true, ExpiresUtc = DateTimeOffset.Now.AddYears(2) });
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, AllowRefresh = true, ExpiresUtc = DateTimeOffset.Now.AddDays(30) });
                 return "";
             }
             else if (type == "jwt")

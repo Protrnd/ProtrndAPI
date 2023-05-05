@@ -8,7 +8,6 @@ namespace ProtrndWebAPI.Controllers
 {
     [Route("api/payment")]
     [ApiController]
-    [ProTrndAuthorizationFilter]
     public class PaymentController : BaseController
     {
         private readonly IConfiguration _configuration;
@@ -19,12 +18,14 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("balance/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetTotalBalance(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _paymentService.GetFundsTotal(id) });
         }
 
         [HttpPost("set/{pin}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> SetPaymentPin(string pin)
         {
             if (pin.Length < 4)
@@ -34,18 +35,21 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("correct/{pin}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> IsPinCorrect(string pin)
         {
             return Ok(new ActionResponse { Data = await _paymentService.IsPinCorrect(pin, _profileClaims.ID), Message = "Is Pin Correct Response", StatusCode = 200, Successful = true });
         }
 
         [HttpGet("get/pin")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetPaymentPin()
         {
             return Ok(new ActionResponse { Data = await _paymentService.PaymentPinExists(_profileClaims.ID), Message = "Pin Exists Response", StatusCode = 200, Successful = true });
         }
 
         [HttpPost("support/transfer")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> Support(SupportDTO dto)
         {
             var support = new Support
@@ -84,6 +88,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("support/virtual")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> VirtualSupport(SupportDTO dto)
         {
             await Support(dto);
@@ -98,7 +103,52 @@ namespace ProtrndWebAPI.Controllers
             });
         }
 
+        [HttpGet("withdrawal/all")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> GetAllWithdrawals()
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.AdminGetAllWithdrawals(), Successful = true, Message = "All Withdrawals", StatusCode = 200 });
+        }
+
+        [HttpGet("funds/total")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> GetTotalFundss()
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.AdminGetTotalFunds(), Successful = true, Message = "Total Funds", StatusCode = 200 });
+        }
+
+        [HttpPost("withdrawal/approve/{id}")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> ApproveWithdrawal(Guid id)
+        {
+            var action = await _paymentService.ApproveWithdrawal(id, _profileClaims.ID);
+            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Total Funds", StatusCode = 200 });
+        }
+
+        [HttpPost("withdrawal/reject/{id}")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> RejectWithdrawal(Guid id)
+        {
+            var action = await _paymentService.RejectWithdrawal(id, _profileClaims.ID);
+            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Rejected", StatusCode = 200 });
+        }
+
+        [HttpGet("revenue/total")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> GetRevenueTotal()
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.GetTotalRevenue(), Successful = true, Message = "Total Revenue", StatusCode = 200 });
+        }
+
+        [HttpGet("revenue/range")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<IActionResult> GetRevenueRange([FromQuery] FilterDate filter)
+        {
+            return Ok(new ActionResponse { Data = await _paymentService.RevenueSpan(filter.Start, filter.End), Successful = true, Message = "", StatusCode = 200 });
+        }
+
         [HttpPost("topup")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> TopUp(FundsDTO dto)
         {
             var funds = new Funds
@@ -133,6 +183,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("balance/to")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> SendFromBalance(FundsDTO dto)
         {
             var profile = await _profileService.GetProfileByIdAsync(dto.ProfileId);
@@ -179,6 +230,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("support/all")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> GetAllSupport()
         {
             var supports = await _paymentService.GetAllSupports(_profileClaims.ID);
@@ -192,6 +244,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("support/all/post/{postId}")]
+        [ProTrndAuthorizationFilter]
         public async Task<IActionResult> GetAllSupportOnPost(Guid postId)
         {
             var supports = await _paymentService.GetSupportsOnPost(postId);
@@ -205,9 +258,10 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("funds/withdraw")]
-        public async Task<IActionResult> WithdrawAllSupport(WithdrawDTO withdraw)
+        [ProTrndAuthorizationFilter]
+        public async Task<IActionResult> Withdraw(WithdrawDTO withdraw)
         {
-            var withdrawalReference = await _paymentService.WithdrawFunds(_profileClaims.ID, withdraw.Amount);
+            var withdrawalReference = await _paymentService.WithdrawFunds(_profileClaims.ID, withdraw.Amount, withdraw.Account);
             if (withdrawalReference != "")
             {
                 SendWithdrawEmail(_profileClaims.Email, withdrawalReference, withdraw);
@@ -282,18 +336,21 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("transactions/{page}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetTransactionsPaginated(int page)
         {
             return Ok(new ActionResponse { Successful = true, Message = $"Transactions results for page {page}", StatusCode = 200, Data = await _paymentService.GetTransactionsAsync(page, _profileClaims.ID, _profileClaims.UserName) });
         }
 
         [HttpGet("transaction/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetTransactionById(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, Message = $"Transaction data for {id}", StatusCode = 200, Data = await _paymentService.GetTransactionByIdAsync(id) });
         }
 
         [HttpPost("verify/promotion")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> VerifyPromotionPayment(VerifyPromotionTransaction promotionTransaction)
         {
             if (_profileClaims == null || _postsService == null || _paymentService == null)

@@ -1,5 +1,5 @@
-﻿using MongoDB.Driver;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services.UserSevice
@@ -13,6 +13,11 @@ namespace ProtrndWebAPI.Services.UserSevice
             return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.Identifier == id && !profile.Disabled)).FirstOrDefaultAsync();
         }
 
+        public async Task<List<Profile>> GetAllProfiles()
+        {
+            return await _profileCollection.Find(p => p.FullName != "").ToListAsync();
+        }
+
         public async Task<Profile?> GetProfileByNameAsync(string name)
         {
             return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName == name && !profile.Disabled)).FirstOrDefaultAsync();
@@ -20,7 +25,7 @@ namespace ProtrndWebAPI.Services.UserSevice
 
         public async Task<List<Profile>> GetProfilesByNameAsync(string name)
         {
-            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName == name  || profile.UserName.StartsWith(name) || profile.UserName.Contains(name) && !profile.Disabled)).ToListAsync();
+            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName == name || profile.UserName.StartsWith(name) || profile.UserName.Contains(name) && !profile.Disabled)).ToListAsync();
         }
 
         public async Task<Profile?> UpdateProfile(Profile user, Profile profile)

@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
-using MongoDB.Bson;
+﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
-using ProtrndWebAPI.Models.Posts;
 using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
@@ -93,7 +90,7 @@ namespace ProtrndWebAPI.Services
             var views = await _viewClickCollection.Find(v => v.PromoId == promoId && v.Viewed).ToListAsync();
             return views.Count;
         }
-        
+
         public async Task<int> GetClickCountAsync(Guid promoId)
         {
             var clicks = await _viewClickCollection.Find(v => v.PromoId == promoId && v.Clicked).ToListAsync();
@@ -148,7 +145,7 @@ namespace ProtrndWebAPI.Services
                 await _postsCollection.InsertOneAsync(upload);
                 return upload;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return null;
             }

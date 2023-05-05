@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace ProtrndWebAPI.Models.Payments
+﻿namespace ProtrndWebAPI.Models.Payments
 {
     public class PromotionDTO
     {

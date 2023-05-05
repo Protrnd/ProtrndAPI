@@ -1,19 +1,18 @@
-global using ProtrndWebAPI.Services.UserSevice;
 global using ProtrndWebAPI.Models;
 global using ProtrndWebAPI.Models.Posts;
 global using ProtrndWebAPI.Models.Response;
 global using ProtrndWebAPI.Models.User;
-using ProtrndWebAPI.Services;
-using ProtrndWebAPI.Settings;
-using ProtrndWebAPI.Services.Network;
+global using ProtrndWebAPI.Services.UserSevice;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using ProtrndWebAPI.Services;
+using ProtrndWebAPI.Services.Network;
+using ProtrndWebAPI.Settings;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,7 +86,8 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-} else
+}
+else
 {
     app.UseHsts();
 }
@@ -112,5 +112,5 @@ app.MapControllers();
 
 app.MapDefaultControllerRoute();
 
-app.Run(url);
-//app.Run();
+//app.Run(url);
+app.Run();

@@ -4,9 +4,9 @@ using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
 {
-    public class FavoritesService: BaseService
+    public class FavoritesService : BaseService
     {
-        public FavoritesService(IOptions<DBSettings> options):base(options) {}
+        public FavoritesService(IOptions<DBSettings> options) : base(options) { }
 
         public async Task<object> AddToFavoritesAsync(Profile profile, Favorite favorite)
         {

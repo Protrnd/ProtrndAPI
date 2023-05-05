@@ -1,5 +1,4 @@
-﻿using MongoDB.Driver.Linq;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace ProtrndWebAPI.Models.Payments
 {

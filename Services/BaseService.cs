@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ProtrndWebAPI.Models.Payments;
-using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
 using Tag = ProtrndWebAPI.Models.Posts.Tag;
 
@@ -28,6 +27,8 @@ namespace ProtrndWebAPI.Services
         public readonly IMongoCollection<ViewClick> _viewClickCollection;
         public readonly IMongoCollection<Funds> _fundsCollection;
         public readonly IMongoCollection<PaymentPin> _pinCollection;
+        public readonly IMongoCollection<Withdraw> _withdrawalCollection;
+        public readonly IMongoCollection<Revenue> _revenueCollection;
 
         public BaseService(IOptions<DBSettings> settings)
         {
@@ -51,6 +52,8 @@ namespace ProtrndWebAPI.Services
             _viewClickCollection = Database.GetCollection<ViewClick>(settings.Value.ViewClickCollection);
             _fundsCollection = Database.GetCollection<Funds>(settings.Value.FundsCollection);
             _pinCollection = Database.GetCollection<PaymentPin>(settings.Value.PinCollection);
+            _withdrawalCollection = Database.GetCollection<Withdraw>(settings.Value.WithdrawalCollection);
+            _revenueCollection = Database.GetCollection<Revenue>(settings.Value.RevenueCollection);
         }
 
         public static string FormatNumber(int number)

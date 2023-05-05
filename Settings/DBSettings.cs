@@ -24,6 +24,8 @@
         public string ViewClickCollection { get; set; } = null!;
         public string FundsCollection { get; set; } = null!;
         public string PinCollection { get; set; } = null!;
+        public string WithdrawalCollection { get; set; } = null!;
+        public string RevenueCollection { get; set; } = null!;
 
     }
 }

@@ -5,18 +5,26 @@ namespace ProtrndWebAPI.Controllers
 {
     [Route("api/profile")]
     [ApiController]
-    [ProTrndAuthorizationFilter]
     public class ProfileController : BaseController
     {
         public ProfileController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         [HttpGet]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetCurrentProfile()
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByIdAsync(_profileClaims.ID) });
         }
 
+        [HttpGet("all")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<ActionResult<ActionResponse>> GetAllProfiles()
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetAllProfiles() });
+        }
+
         [HttpGet("{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetProfileById(Guid id)
         {
             var profile = await _profileService.GetProfileByIdAsync(id);
@@ -26,12 +34,14 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpGet("fetch/{name}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetProfileByUsername(string name)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetProfileByNameAsync(name) });
         }
 
         [HttpGet("name/{name}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetProfilesByUsername(string name)
         {
             var profile = await _profileService.GetProfilesByNameAsync(name);
@@ -41,6 +51,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPut("update")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> UpdateProfile([FromBody] ProfileDTO updateProfile)
         {
             var profile = new Profile
@@ -60,6 +71,7 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpPost("follow/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> Follow(Guid id)
         {
             if (id == _profileClaims.ID)
@@ -72,42 +84,48 @@ namespace ProtrndWebAPI.Controllers
         }
 
         [HttpDelete("unfollow/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> UnFollow(Guid id)
         {
             var resultOk = await _profileService.UnFollow(_profileClaims, id);
             if (!resultOk)
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = "Unfollow failed" });
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Unfollow successful" });
-        }       
+        }
 
         [HttpGet("followers/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetFollowers(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowersAsync(id) });
         }
 
         [HttpGet("is-following/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> IsFollowing(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.IsFollowing(_profileClaims.ID, id) });
         }
 
         [HttpGet("followings/{id}")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetFollowings(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowings(id) });
-        }        
+        }
 
         [HttpGet("followers/{id}/count")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetFollowerCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowerCount(id) });
-        }        
+        }
 
         [HttpGet("followings/{id}/count")]
+        [ProTrndAuthorizationFilter]
         public async Task<ActionResult<ActionResponse>> GetFollowingCount(Guid id)
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowingCount(id) });
-        }     
+        }
     }
 }

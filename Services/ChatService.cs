@@ -4,7 +4,7 @@ using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
 {
-    public class ChatService: BaseService
+    public class ChatService : BaseService
     {
         public ChatService(IOptions<DBSettings> options) : base(options) { }
 
@@ -29,9 +29,10 @@ namespace ProtrndWebAPI.Services
                 newConversation.ReceiverId = chat.ReceiverId;
                 var updateResult = await _conversationsCollection.ReplaceOneAsync(find, newConversation);
                 return updateResult.ModifiedCount > 0;
-            } else
+            }
+            else
             {
-                await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId= chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
                 return true;
             }
         }

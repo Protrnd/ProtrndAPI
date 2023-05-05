@@ -23,6 +23,7 @@ namespace ProtrndWebAPI.Services.UserSevice
                     result.ID = Guid.Parse(user.FindFirstValue(Constants.ID));
                     result.UserName = user.FindFirstValue(Constants.UserName);
                     result.Disabled = bool.Parse(user.FindFirstValue(Constants.Disabled));
+                    result.Role = user.FindFirstValue(Constants.Role);
                     return result;
                 }
                 catch (Exception)

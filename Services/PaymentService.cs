@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using PayStack.Net;
 using ProtrndWebAPI.Models.Payments;
 using ProtrndWebAPI.Settings;
 using System.Security.Cryptography;
@@ -99,7 +98,7 @@ namespace ProtrndWebAPI.Services
             return await _supportCollection.Find(s => s.PostId == postId).ToListAsync();
         }
 
-        public async Task<string> WithdrawFunds(Guid profileId, int amount)
+        public async Task<string> WithdrawFunds(Guid profileId, int amount, AccountDetailsDTO account)
         {
             var supportTotal = await GetFundsTotal(profileId);
             if (supportTotal <= 0)
@@ -108,8 +107,53 @@ namespace ProtrndWebAPI.Services
             }
             var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString(), Time = DateTime.Now };
             await _fundsCollection.InsertOneAsync(funds);
-            await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt= DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Withdraw ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
+            await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Withdraw ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
+            await _withdrawalCollection.InsertOneAsync(new Withdraw { Account = account, Amount = amount, Ref = funds.Reference });
+            await AddRevenue(new Revenue { ProfileId = profileId, Amount = (amount * 5) / 100 });
             return funds.Reference;
+        }
+
+        public async Task<double> AdminGetTotalFunds()
+        {
+            var funds = await _fundsCollection.Find(f => f.Amount > 0).ToListAsync();
+            var total = 0.0;
+            foreach (var fund in funds)
+            {
+                total += fund.Amount;
+            }
+            return total;
+        }
+
+        public async Task<List<Withdraw>> AdminGetAllWithdrawals()
+        {
+            return await _withdrawalCollection.Find(w => w.Amount > 0).ToListAsync();
+        }
+
+        private async Task AddRevenue(Revenue revenue)
+        {
+            await _revenueCollection.InsertOneAsync(revenue);
+        }
+
+        public async Task<double> GetTotalRevenue()
+        {
+            var revenue = await _revenueCollection.Find(r => r.Amount > 0).ToListAsync();
+            var totalRev = 0.0;
+            foreach (var r in revenue)
+            {
+                totalRev += r.Amount;
+            }
+            return totalRev;
+        }
+
+        public async Task<double> RevenueSpan(DateTime start, DateTime end)
+        {
+            var revenue = await _revenueCollection.Find(r => r.Amount > 0 && (start <= r.Time && end >= r.Time)).ToListAsync();
+            var totalRev = 0.0;
+            foreach (var r in revenue)
+            {
+                totalRev += r.Amount;
+            }
+            return totalRev;
         }
 
         public async Task<string> TransferFromBalance(Guid profileId, double amount, Profile receiverProfile, string reference)
@@ -126,6 +170,36 @@ namespace ProtrndWebAPI.Services
                 await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Transfer ₦{amount} to @{receiverProfile.UserName}", ReceiverId = receiverProfile.Id, TrxRef = funds.Reference });
                 return funds.Reference;
             }
+        }
+
+        public async Task<bool> ApproveWithdrawal(Guid withdrawId, Guid by)
+        {
+            var filter = Builders<Withdraw>.Filter.Where(w => w.Id == withdrawId && w.Status == Constants.Pending);
+            var withdrawal = await _withdrawalCollection.Find(filter).SingleOrDefaultAsync();
+            if (withdrawal != null)
+            {
+                withdrawal.By = by;
+                withdrawal.Completed = DateTime.Now;
+                withdrawal.Status = Constants.Approved;
+                var result = await _withdrawalCollection.ReplaceOneAsync(filter, withdrawal);
+                return result.ModifiedCount > 0;
+            }
+            return false;
+        }
+
+        public async Task<bool> RejectWithdrawal(Guid withdrawId, Guid by)
+        {
+            var filter = Builders<Withdraw>.Filter.Where(w => w.Id == withdrawId && w.Status == Constants.Pending);
+            var withdrawal = await _withdrawalCollection.Find(filter).SingleOrDefaultAsync();
+            if (withdrawal != null)
+            {
+                withdrawal.By = by;
+                withdrawal.Completed = DateTime.Now;
+                withdrawal.Status = Constants.Rejected;
+                var result = await _withdrawalCollection.ReplaceOneAsync(filter, withdrawal);
+                return result.ModifiedCount > 0;
+            }
+            return false;
         }
 
         public async Task<string> TransferSupportFromBalance(Guid profileId, double amount)
@@ -173,7 +247,7 @@ namespace ProtrndWebAPI.Services
                 pinResult.PaymentPinHash = pinHash;
                 var filter = Builders<PaymentPin>.Filter.Eq(p => p.ProfileId, profileId);
                 await _pinCollection.ReplaceOneAsync(filter, pinResult);
-            } 
+            }
             else
             {
                 await _pinCollection.InsertOneAsync(new PaymentPin { PaymentPinHash = pinHash, PaymentPinSalt = pinSalt, ProfileId = profileId });

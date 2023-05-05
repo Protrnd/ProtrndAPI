@@ -16,7 +16,7 @@ namespace ProtrndWebAPI.Controllers
             var tags = await _tagsService.GetTagsWithNameAsync(name);
             if (tags == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data=tags});
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = tags });
         }
 
         [HttpPost("add/{name}")]

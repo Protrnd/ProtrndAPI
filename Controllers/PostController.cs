@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ProtrndWebAPI.Models.Posts;
 using ProtrndWebAPI.Services.Network;
 
 namespace ProtrndWebAPI.Controllers
@@ -32,7 +31,7 @@ namespace ProtrndWebAPI.Controllers
         [HttpGet("get/count/{word}")]
         public async Task<ActionResult<ActionResponse>> GetQueryCount(string word)
         {
-            return Ok(new ActionResponse { Successful = true, Message ="Result OK", StatusCode = 200, Data = await _postsService.GetQueryCount(word) });
+            return Ok(new ActionResponse { Successful = true, Message = "Result OK", StatusCode = 200, Data = await _postsService.GetQueryCount(word) });
         }
 
         [HttpGet("get/promotions")]

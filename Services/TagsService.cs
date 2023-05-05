@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Options;
-using ProtrndWebAPI.Settings;
 using MongoDB.Driver;
+using ProtrndWebAPI.Settings;
 using Tag = ProtrndWebAPI.Models.Posts.Tag;
 
 namespace ProtrndWebAPI.Services
 {
-    public class TagsService: BaseService
+    public class TagsService : BaseService
     {
         public TagsService(IOptions<DBSettings> settings) : base(settings) { }
 

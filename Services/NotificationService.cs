@@ -1,21 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
-using ProtrndWebAPI.Settings;
 using MongoDB.Driver;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using ProtrndWebAPI.Models.Posts;
+using ProtrndWebAPI.Settings;
 
 namespace ProtrndWebAPI.Services
 {
     public class NotificationService : BaseService
     {
         public NotificationService(IOptions<DBSettings> options) : base(options) { }
-
-        public async Task ChatNotification(Profile sender, Guid receiverId)
-        {
-            var message = sender.UserName + Constants.SentMessage;
-            //await _notificationsCollection.InsertOneAsync(Notification(sender.Identifier, receiverId, message));
-            return;
-        }
 
         public async Task<bool> FollowNotification(TokenClaims sender, Guid receiverId)
         {
