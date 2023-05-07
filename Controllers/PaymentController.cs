@@ -187,7 +187,7 @@ namespace ProtrndWebAPI.Controllers
         public async Task<IActionResult> SendFromBalance(FundsDTO dto)
         {
             var profile = await _profileService.GetProfileByIdAsync(dto.ProfileId);
-            var transfer = await _paymentService.TransferFromBalance(_profileClaims.ID, dto.Amount, profile, dto.Reference);
+            var transfer = await _paymentService.TransferFromBalance(dto.FromId, dto.Amount, profile, dto.Reference);
             if (transfer == "")
                 return BadRequest(new ActionResponse
                 {
@@ -212,6 +212,7 @@ namespace ProtrndWebAPI.Controllers
                 Id = Guid.NewGuid(),
                 Amount = dto.Amount,
                 ProfileId = dto.ProfileId,
+                ReceiverId = dto.FromId,
                 CreatedAt = DateTime.Now,
                 TrxRef = dto.Reference,
                 ItemId = funds.Id,

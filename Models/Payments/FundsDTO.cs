@@ -6,6 +6,8 @@ namespace ProtrndWebAPI.Models.Payments
     {
         [JsonPropertyName("profileid")]
         public Guid ProfileId { get; set; } = Guid.Empty;
+        [JsonPropertyName("fromid")]
+        public Guid FromId { get; set; } = Guid.Empty;
         [JsonPropertyName("amount")]
         public double Amount { get; set; } = 0d;
         [JsonPropertyName("reference")]
