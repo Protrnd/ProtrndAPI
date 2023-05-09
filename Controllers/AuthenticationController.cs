@@ -75,7 +75,7 @@ namespace ProtrndWebAPI.Controllers
                 return BadRequest(new ActionResponse { Message = Constants.UserExists });
             }
 
-            var otp = SendOtpEmail(request.Email);
+            var otp = SendOtpEmail(request.Email, "requested to create an account");
             return Ok(new ActionResponse
             {
                 Successful = true,
@@ -95,7 +95,7 @@ namespace ProtrndWebAPI.Controllers
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound, Successful = false, Data = null });
             }
 
-            var otp = SendOtpEmail(login.Email);
+            var otp = SendOtpEmail(login.Email, "requested to reset your password");
             return Ok(new ActionResponse
             {
                 Successful = true,
@@ -122,7 +122,7 @@ namespace ProtrndWebAPI.Controllers
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok });
         }
 
-        private int SendOtpEmail(string to)
+        private int SendOtpEmail(string to, string type)
         {
             var from = _configuration[Constants.NoreplyEmailFrom];
             var connection = _configuration[Constants.NoreplyEmailConnection];
@@ -130,9 +130,9 @@ namespace ProtrndWebAPI.Controllers
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse(from));
             email.To.Add(MailboxAddress.Parse(to));
-            email.Subject = "Your ProTrnd One-Time-Password";
+            email.Subject = "Your Protrnd One-Time-Password";
             var otp = GenerateOTP();
-            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"{getMailBodyTemplate(otp)}" };
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"{getMailBodyTemplate(otp, type)}" };
             using var smtp = new SmtpClient();
             smtp.AuthenticationMechanisms.Remove("XOAUTH2");
             smtp.Connect(connection, 465);
@@ -276,9 +276,10 @@ namespace ProtrndWebAPI.Controllers
             return r.Next(1000, 9999);
         }
 
-        private string getMailBodyTemplate(int otp)
+        private string getMailBodyTemplate(int otp, string type)
         {
-            var body = "\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Protrnd</title>\r\n    <style>\r\n        *{\r\n            font-family:Arial, Helvetica, sans-serif;\r\n        }\r\n\r\n        body{\r\n            /* width: 100%; */\r\n            height: auto;\r\n\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n        }\r\n\r\n        /* .container{\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n\r\n        } */\r\n\r\n        .content{\r\n            background-color: white;\r\n            width: 450px;\r\n            margin-top: 20px;\r\n            margin-bottom: 20px;\r\n            border-radius: 0.5rem;\r\n            padding: 20px;\r\n        }\r\n\r\n        .discription{\r\n            line-height: 1.5rem;\r\n            font-size: 15px;\r\n            color: rgb(61, 59, 59);\r\n            \r\n        }\r\n\r\n        .nav{\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: space-between;\r\n        }\r\n\r\n        .nav > a{\r\n            text-decoration: none;\r\n            color: #423f3f;\r\n            font-weight: bold;\r\n            border: 2px solid #423f3f;\r\n            padding: 15px;\r\n            border-radius: 0.5rem;\r\n        }\r\n\r\n        .top-description{\r\n            font-weight: 100;\r\n            word-spacing: 0.2rem;\r\n            color: rgb(61, 59, 59);\r\n        }\r\n\r\n        .otp{\r\n            width: 100%;\r\n            background-color: #d2d5e0;\r\n            padding-top: 30px;\r\n            padding-bottom: 30px;\r\n            text-align: center;\r\n            font-weight: bold;\r\n            font-size: 50px;\r\n            border-radius: 0.5rem;\r\n            letter-spacing: 1rem;\r\n        }\r\n\r\n\r\n        .logo{\r\n            width: 40px;\r\n        }\r\n\r\n        .why{\r\n            width: 400px;\r\n            text-align: center;\r\n            font-size: 12px;\r\n            color: rgb(71, 68, 68);\r\n            font-weight: 600;\r\n            margin-bottom: 20px;\r\n        }\r\n\r\n    </style>\r\n</head>\r\n<body>\r\n    <!-- <p class=\"container\"> -->\r\n        <div class=\"content\">\r\n            <h1 class=\"heading\">\r\n                Complete registraion\r\n            </h1>\r\n            \r\n            <p class=\"discription top-description\">\r\n                To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.\r\n                 Please enter this verification code to get started on Protrnd:\r\n            </p>\r\n    \r\n            \r\n            <p class=\"otp\">\r\n                {otpvalue}\r\n            </p>\r\n            \r\n            <p class=\"discription\">\r\n                If you did'nt create an account with Protrend, please ignore this message. This OTP will be valid only for this request. Please do not close the otp page\r\n            </p>\r\n            <span class=\"discription\">\r\n                Thanks,\r\n            </span>\r\n                <br>\r\n            <span class=\"discription\">\r\n                Protrnd\r\n            </span>\r\n        </div>\r\n\r\n        <span class=\"why\">\r\n            You have received this email because you have signed up for an account with Protrnd\r\n        </span>\r\n        \r\n    <!-- </p> -->\r\n</body>\r\n</html>";
+            var body = "\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Protrnd</title>\r\n    <style>\r\n        *{\r\n            font-family:Arial, Helvetica, sans-serif;\r\n        }\r\n\r\n        body{\r\n            /* width: 100%; */\r\n            height: auto;\r\n\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n        }\r\n\r\n        /* .container{\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n\r\n        } */\r\n\r\n        .content{\r\n            background-color: white;\r\n            width: 450px;\r\n            margin-top: 20px;\r\n            margin-bottom: 20px;\r\n            border-radius: 0.5rem;\r\n            padding: 20px;\r\n        }\r\n\r\n        .discription{\r\n            line-height: 1.5rem;\r\n            font-size: 15px;\r\n            color: rgb(61, 59, 59);\r\n            \r\n        }\r\n\r\n        .nav{\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: space-between;\r\n        }\r\n\r\n        .nav > a{\r\n            text-decoration: none;\r\n            color: #423f3f;\r\n            font-weight: bold;\r\n            border: 2px solid #423f3f;\r\n            padding: 15px;\r\n            border-radius: 0.5rem;\r\n        }\r\n\r\n        .top-description{\r\n            font-weight: 100;\r\n            word-spacing: 0.2rem;\r\n            color: rgb(61, 59, 59);\r\n        }\r\n\r\n        .otp{\r\n            width: 100%;\r\n            background-color: #d2d5e0;\r\n            padding-top: 30px;\r\n            padding-bottom: 30px;\r\n            text-align: center;\r\n            font-weight: bold;\r\n            font-size: 50px;\r\n            border-radius: 0.5rem;\r\n            letter-spacing: 1rem;\r\n        }\r\n\r\n\r\n        .logo{\r\n            width: 40px;\r\n        }\r\n\r\n        .why{\r\n            width: 400px;\r\n            text-align: center;\r\n            font-size: 12px;\r\n            color: rgb(71, 68, 68);\r\n            font-weight: 600;\r\n            margin-bottom: 20px;\r\n        }\r\n\r\n    </style>\r\n</head>\r\n<body>\r\n    <!-- <p class=\"container\"> -->\r\n        <div class=\"content\">\r\n            <h1 class=\"heading\">\r\n                Complete registraion\r\n            </h1>\r\n            \r\n            <p class=\"discription top-description\">\r\n                To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.\r\n                 Please enter this verification code to get started on Protrnd:\r\n            </p>\r\n    \r\n            \r\n            <p class=\"otp\">\r\n                {otpvalue}\r\n            </p>\r\n            \r\n            <p class=\"discription\">\r\n                If you did'nt create an account with Protrnd, please ignore this message. This OTP will be valid only for this request. Please do not close the otp page\r\n            </p>\r\n            <span class=\"discription\">\r\n                Thanks,\r\n            </span>\r\n                <br>\r\n            <span class=\"discription\">\r\n                Protrnd\r\n            </span>\r\n        </div>\r\n\r\n        <span class=\"why\">\r\n            You have received this email because you have {request} with Protrnd\r\n        </span>\r\n        \r\n    <!-- </p> -->\r\n</body>\r\n</html>";
+            body.Replace("{request}", type);
             return body.Replace("{otpvalue}", otp.ToString());
         }
     }

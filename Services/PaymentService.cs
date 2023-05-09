@@ -2,9 +2,12 @@
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using ProtrndWebAPI.Models.Payments;
+using ProtrndWebAPI.Models.User;
 using ProtrndWebAPI.Settings;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Xml;
 using System.Text;
+using static MongoDB.Driver.WriteConcern;
 
 namespace ProtrndWebAPI.Services
 {
@@ -108,7 +111,7 @@ namespace ProtrndWebAPI.Services
             var funds = new Funds { Amount = -amount, ProfileId = profileId, Reference = GenerateReference().ToString(), Time = DateTime.Now };
             await _fundsCollection.InsertOneAsync(funds);
             await InsertTransactionAsync(new Transaction { Amount = -amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = profileId, Purpose = $"Withdraw ₦{amount}", ReceiverId = profileId, TrxRef = funds.Reference });
-            await _withdrawalCollection.InsertOneAsync(new Withdraw { Account = account, Amount = amount, Ref = funds.Reference });
+            await _withdrawalCollection.InsertOneAsync(new Withdraw { Account = account, Amount = amount, Ref = funds.Reference, Owner = profileId });
             await AddRevenue(new Revenue { ProfileId = profileId, Amount = (amount * 5) / 100 });
             return funds.Reference;
         }
@@ -197,6 +200,9 @@ namespace ProtrndWebAPI.Services
                 withdrawal.Completed = DateTime.Now;
                 withdrawal.Status = Constants.Rejected;
                 var result = await _withdrawalCollection.ReplaceOneAsync(filter, withdrawal);
+                var funds = new Funds { Amount = withdrawal.Amount, ProfileId = withdrawal.Owner, Reference = withdrawal.Ref };
+                await _fundsCollection.InsertOneAsync(funds);
+                await InsertTransactionAsync(new Transaction { Amount = withdrawal.Amount, CreatedAt = DateTime.Now, ItemId = funds.Id, ProfileId = withdrawal.Owner, Purpose = $"Rejected Withdrawal of ₦{withdrawal.Amount}", ReceiverId = withdrawal.Owner, TrxRef = funds.Reference });
                 return result.ModifiedCount > 0;
             }
             return false;

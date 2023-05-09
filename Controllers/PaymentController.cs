@@ -50,7 +50,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("support/transfer")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> Support(SupportDTO dto)
+        public async Task<ActionResult<ActionResponse>> Support(SupportDTO dto)
         {
             var support = new Support
             {
@@ -89,7 +89,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("support/virtual")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> VirtualSupport(SupportDTO dto)
+        public async Task<ActionResult<ActionResponse>> VirtualSupport(SupportDTO dto)
         {
             await Support(dto);
             var success = await _paymentService.TransferSupportFromBalance(_profileClaims.ID, dto.Amount);
@@ -105,21 +105,21 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpGet("withdrawal/all")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> GetAllWithdrawals()
+        public async Task<ActionResult<ActionResponse>> GetAllWithdrawals()
         {
             return Ok(new ActionResponse { Data = await _paymentService.AdminGetAllWithdrawals(), Successful = true, Message = "All Withdrawals", StatusCode = 200 });
         }
 
         [HttpGet("funds/total")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> GetTotalFundss()
+        public async Task<ActionResult<ActionResponse>> GetTotalFundss()
         {
             return Ok(new ActionResponse { Data = await _paymentService.AdminGetTotalFunds(), Successful = true, Message = "Total Funds", StatusCode = 200 });
         }
 
         [HttpPost("withdrawal/approve/{id}")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> ApproveWithdrawal(Guid id)
+        public async Task<ActionResult<ActionResponse>> ApproveWithdrawal(Guid id)
         {
             var action = await _paymentService.ApproveWithdrawal(id, _profileClaims.ID);
             return Ok(new ActionResponse { Data = action, Successful = action, Message = "Total Funds", StatusCode = 200 });
@@ -127,7 +127,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("withdrawal/reject/{id}")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> RejectWithdrawal(Guid id)
+        public async Task<ActionResult<ActionResponse>> RejectWithdrawal(Guid id)
         {
             var action = await _paymentService.RejectWithdrawal(id, _profileClaims.ID);
             return Ok(new ActionResponse { Data = action, Successful = action, Message = "Rejected", StatusCode = 200 });
@@ -135,21 +135,21 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpGet("revenue/total")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> GetRevenueTotal()
+        public async Task<ActionResult<ActionResponse>> GetRevenueTotal()
         {
             return Ok(new ActionResponse { Data = await _paymentService.GetTotalRevenue(), Successful = true, Message = "Total Revenue", StatusCode = 200 });
         }
 
         [HttpGet("revenue/range")]
         [ProTrndAuthorizationFilter(role: Constants.Admin)]
-        public async Task<IActionResult> GetRevenueRange([FromQuery] FilterDate filter)
+        public async Task<ActionResult<ActionResponse>> GetRevenueRange([FromQuery] FilterDate filter)
         {
             return Ok(new ActionResponse { Data = await _paymentService.RevenueSpan(filter.Start, filter.End), Successful = true, Message = "", StatusCode = 200 });
         }
 
         [HttpPost("topup")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> TopUp(FundsDTO dto)
+        public async Task<ActionResult<ActionResponse>> TopUp(FundsDTO dto)
         {
             var funds = new Funds
             {
@@ -184,7 +184,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("balance/to")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> SendFromBalance(FundsDTO dto)
+        public async Task<ActionResult<ActionResponse>> SendFromBalance(FundsDTO dto)
         {
             var profile = await _profileService.GetProfileByIdAsync(dto.ProfileId);
             var transfer = await _paymentService.TransferFromBalance(dto.FromId, dto.Amount, profile, dto.Reference);
@@ -232,7 +232,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpGet("support/all")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> GetAllSupport()
+        public async Task<ActionResult<ActionResponse>> GetAllSupport()
         {
             var supports = await _paymentService.GetAllSupports(_profileClaims.ID);
             return Ok(new ActionResponse
@@ -246,7 +246,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpGet("support/all/post/{postId}")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> GetAllSupportOnPost(Guid postId)
+        public async Task<ActionResult<ActionResponse>> GetAllSupportOnPost(Guid postId)
         {
             var supports = await _paymentService.GetSupportsOnPost(postId);
             return Ok(new ActionResponse
@@ -260,7 +260,7 @@ namespace ProtrndWebAPI.Controllers
 
         [HttpPost("funds/withdraw")]
         [ProTrndAuthorizationFilter]
-        public async Task<IActionResult> Withdraw(WithdrawDTO withdraw)
+        public async Task<ActionResult<ActionResponse>> Withdraw(WithdrawDTO withdraw)
         {
             var withdrawalReference = await _paymentService.WithdrawFunds(_profileClaims.ID, withdraw.Amount, withdraw.Account);
             if (withdrawalReference != "")
@@ -282,6 +282,62 @@ namespace ProtrndWebAPI.Controllers
                 Data = withdrawalReference,
                 StatusCode = 400
             });
+        }
+
+        [HttpPost("forgot/pin")]
+        public async Task<ActionResult<ActionResponse>> SendResetOtp()
+        {
+            var exists = await _paymentService.PaymentPinExists(_profileClaims.ID);
+            if (exists)
+            {
+                var otp = SendResetEmail(_profileClaims.Email);
+                return Ok(new ActionResponse
+                {
+                    Successful = exists,
+                    Message = "Reset PIN OTP",
+                    Data = otp,
+                    StatusCode = 200
+                });
+            }
+            return BadRequest(new ActionResponse
+            {
+                Successful = false,
+                Message = "No Pin Set",
+                Data = 0,
+                StatusCode = 400
+            });
+        }
+
+        private static int GenerateOTP()
+        {
+            var r = new Random();
+            return r.Next(1000, 9999);
+        }
+
+        private int SendResetEmail(string to)
+        {
+            var from = _configuration[Constants.NoreplyEmailFrom];
+            var connection = _configuration[Constants.NoreplyEmailConnection];
+            var password = _configuration[Constants.NoreplyEmailPass];
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(from));
+            email.To.Add(MailboxAddress.Parse(to));
+            email.Subject = "Your Protrnd One-Time-Password";
+            var otp = GenerateOTP();
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"{getMailBodyTemplate(otp, "requested to reset you payment pin")}" };
+            using var smtp = new SmtpClient();
+            smtp.AuthenticationMechanisms.Remove("XOAUTH2");
+            smtp.Connect(connection, 465);
+            smtp.Authenticate(from, password);
+            try
+            {
+                smtp.Send(email);
+                return otp;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
 
         private string SendWithdrawEmail(string to, string reference, WithdrawDTO withdraw)
@@ -334,6 +390,13 @@ namespace ProtrndWebAPI.Controllers
             {
                 return "";
             }
+        }
+
+        private string getMailBodyTemplate(int otp, string type)
+        {
+            var body = "\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Protrnd</title>\r\n    <style>\r\n        *{\r\n            font-family:Arial, Helvetica, sans-serif;\r\n        }\r\n\r\n        body{\r\n            /* width: 100%; */\r\n            height: auto;\r\n\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n        }\r\n\r\n        /* .container{\r\n            background-color: #d2d5e0;\r\n            width: 100%;\r\n            height: 100%;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            flex-direction: column;\r\n\r\n        } */\r\n\r\n        .content{\r\n            background-color: white;\r\n            width: 450px;\r\n            margin-top: 20px;\r\n            margin-bottom: 20px;\r\n            border-radius: 0.5rem;\r\n            padding: 20px;\r\n        }\r\n\r\n        .discription{\r\n            line-height: 1.5rem;\r\n            font-size: 15px;\r\n            color: rgb(61, 59, 59);\r\n            \r\n        }\r\n\r\n        .nav{\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: space-between;\r\n        }\r\n\r\n        .nav > a{\r\n            text-decoration: none;\r\n            color: #423f3f;\r\n            font-weight: bold;\r\n            border: 2px solid #423f3f;\r\n            padding: 15px;\r\n            border-radius: 0.5rem;\r\n        }\r\n\r\n        .top-description{\r\n            font-weight: 100;\r\n            word-spacing: 0.2rem;\r\n            color: rgb(61, 59, 59);\r\n        }\r\n\r\n        .otp{\r\n            width: 100%;\r\n            background-color: #d2d5e0;\r\n            padding-top: 30px;\r\n            padding-bottom: 30px;\r\n            text-align: center;\r\n            font-weight: bold;\r\n            font-size: 50px;\r\n            border-radius: 0.5rem;\r\n            letter-spacing: 1rem;\r\n        }\r\n\r\n\r\n        .logo{\r\n            width: 40px;\r\n        }\r\n\r\n        .why{\r\n            width: 400px;\r\n            text-align: center;\r\n            font-size: 12px;\r\n            color: rgb(71, 68, 68);\r\n            font-weight: 600;\r\n            margin-bottom: 20px;\r\n        }\r\n\r\n    </style>\r\n</head>\r\n<body>\r\n    <!-- <p class=\"container\"> -->\r\n        <div class=\"content\">\r\n            <h1 class=\"heading\">\r\n                Complete registraion\r\n            </h1>\r\n            \r\n            <p class=\"discription top-description\">\r\n                To proceed, you need to complete this step before creating your Protrnd account. Please confirm this is right email address for your new account.\r\n                 Please enter this verification code to get started on Protrnd:\r\n            </p>\r\n    \r\n            \r\n            <p class=\"otp\">\r\n                {otpvalue}\r\n            </p>\r\n            \r\n            <p class=\"discription\">\r\n                If you did'nt create an account with Protrnd, please ignore this message. This OTP will be valid only for this request. Please do not close the otp page\r\n            </p>\r\n            <span class=\"discription\">\r\n                Thanks,\r\n            </span>\r\n                <br>\r\n            <span class=\"discription\">\r\n                Protrnd\r\n            </span>\r\n        </div>\r\n\r\n        <span class=\"why\">\r\n            You have received this email because you have {request} with Protrnd\r\n        </span>\r\n        \r\n    <!-- </p> -->\r\n</body>\r\n</html>";
+            body.Replace("{request}", type);
+            return body.Replace("{otpvalue}", otp.ToString());
         }
 
         [HttpGet("transactions/{page}")]

@@ -15,6 +15,8 @@ namespace ProtrndWebAPI.Models.User
         public string Status { get; set; } = Constants.Pending;
         [JsonPropertyName("by")]
         public Guid By { get; set; }
+        [JsonPropertyName("owner")]
+        public Guid Owner { get; set; }
         [JsonPropertyName("created")]
         public DateTime Date { get; set; } = DateTime.Now;
         [JsonPropertyName("completed")]
