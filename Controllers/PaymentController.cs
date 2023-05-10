@@ -122,7 +122,7 @@ namespace ProtrndWebAPI.Controllers
         public async Task<ActionResult<ActionResponse>> ApproveWithdrawal(Guid id)
         {
             var action = await _paymentService.ApproveWithdrawal(id, _profileClaims.ID);
-            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Total Funds", StatusCode = 200 });
+            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Approval Request", StatusCode = 200 });
         }
 
         [HttpPost("withdrawal/reject/{id}")]
@@ -130,7 +130,7 @@ namespace ProtrndWebAPI.Controllers
         public async Task<ActionResult<ActionResponse>> RejectWithdrawal(Guid id)
         {
             var action = await _paymentService.RejectWithdrawal(id, _profileClaims.ID);
-            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Rejected", StatusCode = 200 });
+            return Ok(new ActionResponse { Data = action, Successful = action, Message = "Rejected Request", StatusCode = 200 });
         }
 
         [HttpGet("revenue/total")]

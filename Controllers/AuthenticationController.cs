@@ -112,7 +112,9 @@ namespace ProtrndWebAPI.Controllers
             var register = await GetUserResult(new ProfileDTO { Email = resetPasswordDto.Reset.Email });
             if (_regService == null || register == null)
                 return NotFound(new ActionResponse { StatusCode = 404, Message = ActionResponseMessage.NotFound });
-
+            var otp = DecryptDataWithAes(resetPasswordDto.OTPHash, _configuration[Constants.OTPEncryptionRoute]);
+            if (_regService == null || otp != resetPasswordDto.PlainText)
+                return new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid otp inserted", Successful = false, Data = false }) { StatusCode = 403 };
             CreateHash(resetPasswordDto.Reset.Password, out byte[] passwordHash, out byte[] passwordSalt);
             register.PasswordHash = passwordHash;
             register.PasswordSalt = passwordSalt;
