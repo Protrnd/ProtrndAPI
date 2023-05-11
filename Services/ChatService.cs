@@ -28,7 +28,14 @@ namespace ProtrndWebAPI.Services
                 newConversation.Senderid = chat.SenderId;
                 newConversation.ReceiverId = chat.ReceiverId;
                 var updateResult = await _conversationsCollection.ReplaceOneAsync(find, newConversation);
-                return updateResult.ModifiedCount > 0;
+                if (updateResult.ModifiedCount > 0)
+                {
+                    return true;
+                } else
+                {
+                    await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                    return true;
+                }
             }
             else
             {
