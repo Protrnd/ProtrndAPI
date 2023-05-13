@@ -9,6 +9,8 @@ namespace ProtrndWebAPI.Models.User
         public Guid SenderId { get; set; }
         [JsonPropertyName("receiverid")]
         public Guid ReceiverId { get; set; }
+        [JsonPropertyName("covoid")]
+        public Guid Convoid { get; set; }
         [JsonPropertyName("time")]
         public DateTime Time { get; set; } = DateTime.Now;
         [JsonPropertyName("seen")]

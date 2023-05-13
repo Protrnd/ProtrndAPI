@@ -48,7 +48,7 @@ namespace ProtrndWebAPI.Controllers
             {
                 Successful = true,
                 Message = "OK",
-                Data = await _chatService.GetChatsFromUser(_profileClaims.ID, id),
+                Data = await _chatService.GetChatsFromUser(id),
                 StatusCode = 200
             });
         }
