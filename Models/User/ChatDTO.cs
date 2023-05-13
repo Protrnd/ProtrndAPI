@@ -6,6 +6,8 @@ namespace ProtrndWebAPI.Models.User
     {
         [JsonPropertyName("receiverid")]
         public Guid ReceiverId { get; set; }
+        [JsonPropertyName("convoid")]
+        public Guid Convoid { get; set; }
         [JsonPropertyName("message")]
         public string Message { get; set; } = string.Empty;
         [JsonPropertyName("itemid")]

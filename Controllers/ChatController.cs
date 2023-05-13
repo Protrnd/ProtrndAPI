@@ -21,6 +21,7 @@ namespace ProtrndWebAPI.Controllers
                 {
                     ReceiverId = chat.ReceiverId,
                     SenderId = _profileClaims.ID,
+                    Convoid = chat.Convoid,
                     Message = chat.Message,
                     ItemId = chat.ItemId,
                     Type = chat.Type
