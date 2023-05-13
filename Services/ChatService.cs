@@ -15,6 +15,11 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<Conversations> GetConvoAsync(Guid id)
+        {
+            return await _conversationsCollection.Find(c => c.Id == id).SingleOrDefaultAsync();
+        }
+
         public async Task<Guid> GetConversationIdAsync(Guid myProfileId, Guid userProfileId)
         {
             var conversation =  await _conversationsCollection.Find(c => c.Senderid == myProfileId  && c.ReceiverId == userProfileId || c.ReceiverId == myProfileId && c.Senderid == userProfileId).SingleOrDefaultAsync();
@@ -26,10 +31,10 @@ namespace ProtrndWebAPI.Services
         public async Task<bool> SendChat(Chat chat)
         {
             await _chatCollection.InsertOneAsync(chat);
-            var conversation = await GetConversationAsync(chat.ReceiverId);
-            if (conversation.Count > 0)
+            var conversation = await GetConvoAsync(chat.Convoid);
+            if (conversation != null)
             {
-                var newConversation = conversation[0];
+                var newConversation = conversation;
                 newConversation.Time = chat.Time;
                 var find = Builders<Conversations>.Filter.Where(c => c.Id == chat.Convoid);
                 newConversation.RecentMessage = chat.Message;
@@ -41,13 +46,13 @@ namespace ProtrndWebAPI.Services
                     return true;
                 } else
                 {
-                    await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                    await _conversationsCollection.InsertOneAsync(new Conversations { Id = chat.Convoid, ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
                     return true;
                 }
             }
             else
             {
-                await _conversationsCollection.InsertOneAsync(new Conversations { ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                await _conversationsCollection.InsertOneAsync(new Conversations { Id = chat.Convoid, ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
                 return true;
             }
         }
