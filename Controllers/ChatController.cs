@@ -30,6 +30,19 @@ namespace ProtrndWebAPI.Controllers
             });
         }
 
+        [HttpGet("conversation/{id}")]
+        public async Task<ActionResult<ActionResponse>> GetConversationId(Guid id)
+        {
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _chatService.GetConversationIdAsync(_profileClaims.ID, id),
+                StatusCode = 200
+            });
+        }
+
+
         [HttpGet("conversations")]
         public async Task<IActionResult> GetConversations()
         {

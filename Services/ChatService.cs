@@ -15,6 +15,14 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
+        public async Task<Guid> GetConversationIdAsync(Guid myProfileId, Guid userProfileId)
+        {
+            var conversation =  await _conversationsCollection.Find(c => c.Senderid == myProfileId  && c.ReceiverId == userProfileId || c.ReceiverId == myProfileId && c.Senderid == userProfileId).SingleOrDefaultAsync();
+            if (conversation != null)
+                return conversation.Id;
+            return Guid.NewGuid();
+        }
+
         public async Task<bool> SendChat(Chat chat)
         {
             await _chatCollection.InsertOneAsync(chat);
