@@ -30,11 +30,12 @@ namespace ProtrndWebAPI.Services
 
         public async Task<bool> SendChat(Chat chat)
         {
-            await _chatCollection.InsertOneAsync(chat);
             var conversation = await GetConvoAsync(chat.Convoid);
             if (conversation != null)
             {
+                await _chatCollection.InsertOneAsync(chat);
                 var newConversation = conversation;
+                newConversation.Id = chat.Convoid;
                 newConversation.Time = chat.Time;
                 var find = Builders<Conversations>.Filter.Where(c => c.Id == chat.Convoid);
                 newConversation.RecentMessage = chat.Message;
@@ -46,13 +47,17 @@ namespace ProtrndWebAPI.Services
                     return true;
                 } else
                 {
-                    await _conversationsCollection.InsertOneAsync(new Conversations { Id = chat.Convoid, ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                    await _conversationsCollection.InsertOneAsync(newConversation);
                     return true;
                 }
             }
             else
             {
-                await _conversationsCollection.InsertOneAsync(new Conversations { Id = chat.Convoid, ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message });
+                var convo = new Conversations { Id = Guid.NewGuid(), ReceiverId = chat.ReceiverId, Senderid = chat.SenderId, RecentMessage = chat.Message };
+                await _conversationsCollection.InsertOneAsync(convo);
+                chat.Convoid = convo.Id;
+                chat.Time = convo.Time;
+                await _chatCollection.InsertOneAsync(chat);
                 return true;
             }
         }
