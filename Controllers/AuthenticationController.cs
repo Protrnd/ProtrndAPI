@@ -201,7 +201,7 @@ namespace ProtrndWebAPI.Controllers
             if (!VerifyHash(result.PasswordSalt, login.Password, result.PasswordHash))
                 return BadRequest(new ActionResponse { StatusCode = 400, Message = Constants.WrongEmailPassword });
 
-            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Admin Login Successful", Data = await LoginUser(result, type) });
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = "Admin Login Successful", Data = await LoginAdmin(result, type) });
         }
 
         [HttpPost("logout")]
@@ -238,6 +238,20 @@ namespace ProtrndWebAPI.Controllers
             return await ReturnCookieType(type, claims);
         }
 
+        private async Task<string?> LoginAdmin(Register user, string type)
+        {
+            List<Claim> claims = new()
+                {
+                    new Claim(Constants.ID, user.Id.ToString()),
+                    new Claim(Constants.UserName, user.UserName.ToString()),
+                    new Claim(Constants.Email, user.Email.ToString()),
+                    new Claim(Constants.Disabled, (user.AccountType == Constants.Disabled).ToString()),
+                    new Claim(Constants.Role, Constants.Admin)
+                };
+
+            return await ReturnCookieType(type, claims);
+        }
+
         private async Task<string> ReturnCookieType(string type, List<Claim> claims)
         {
             if (type == "cookie")
@@ -255,7 +269,7 @@ namespace ProtrndWebAPI.Controllers
                 var jwt = new JwtSecurityTokenHandler().WriteToken(token);
                 return jwt;
             }
-            return null;
+            return "";
         }
 
         private static void CreateHash(string plaintext, out byte[] hash, out byte[] salt)

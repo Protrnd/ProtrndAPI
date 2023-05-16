@@ -1,6 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.IdentityModel.Tokens;
+using ProtrndWebAPI.Services.UserSevice;
+using System.Configuration;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 
 namespace ProtrndWebAPI.Services.Network
 {
@@ -17,24 +23,52 @@ namespace ProtrndWebAPI.Services.Network
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
-            if (context.HttpContext.RequestServices.GetService(typeof(IUserService)) is not IUserService isAuthenticated || isAuthenticated.GetProfileTokenClaims() == null)
+            var s = context.HttpContext.Request.Headers["Authorization"];
+            if (AuthenticationHeaderValue.TryParse(s, out var headerValue))
             {
-                context.Result = new UnauthorizedObjectResult(new ActionResponse { StatusCode = 401, Message = "User is unauthorized" });
-                return;
+                var scheme = headerValue.Scheme;
+                var parameter = headerValue.Parameter;
+                var stream = parameter;
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(stream);
+                var tokenS = handler.ReadToken(stream) as JwtSecurityToken;
+                var issuer = tokenS.Claims.FirstOrDefault(a => a.Type == "iss")?.Value;
+                if (issuer != null && issuer == "protrnd.com") 
+                {
+                    if (_role == Constants.Admin)
+                    {
+                        var role = tokenS.Claims.FirstOrDefault(a => a.Type == Constants.Role)?.Value;
+                        if (role != null && role != Constants.Admin)
+                        {
+                            context.Result = new ObjectResult(new ActionResponse { StatusCode = 403, Message = "User is forbidden, Route only for admins" }) { StatusCode = 403 };
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        var disabled = tokenS.Claims.FirstOrDefault(r => r.Type == Constants.Disabled)?.Value;
+                        if (disabled == null || disabled != Constants.False)
+                        {
+                            context.Result = new ObjectResult(new ActionResponse { StatusCode = 403, Message = "User account disabled" }) { StatusCode = 403 };
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    context.Result = new ObjectResult(new ActionResponse { StatusCode = 403, Message = "Invalid claims" }) { StatusCode = 403 };
+                    return;
+                }
             }
+            else
+            {
+                var profileService = context.HttpContext.RequestServices.GetService(typeof(IUserService));
+                if (profileService is not IUserService isAuthenticated || isAuthenticated.GetProfileTokenClaims() == null)
+                {
+                    context.Result = new UnauthorizedObjectResult(new ActionResponse { StatusCode = 401, Message = "User is unauthorized" });
+                    return;
+                }
 
-            var hasAllRequiredClaims = _requiredClaims.All(claim => context.HttpContext.User.HasClaim(x => x.Type == claim));
-            var claimsIdentity = context.HttpContext.User.Identity as ClaimsIdentity;
-            var isAdmin = claimsIdentity.HasClaim(Constants.Role, Constants.Admin);
-            if (!hasAllRequiredClaims)
-            {
-                context.Result = new ObjectResult(new ActionResponse { StatusCode = 403, Message = "User is forbidden, Invalid claims" }) { StatusCode = 403 };
-                return;
-            }
-            if (_role == Constants.Admin && !isAdmin)
-            {
-                context.Result = new ObjectResult(new ActionResponse { StatusCode = 403, Message = "User is forbidden, Route only for admins" }) { StatusCode = 403 };
-                return;
             }
         }
     }

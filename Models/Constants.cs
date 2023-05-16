@@ -3,6 +3,7 @@
     public class Constants
     {
         public const string Pending = "Pending";
+        public const string False = "False";
         public const string Approved = "Approved";
         public const string Rejected = "Rejected";
         public const string Role = "role";
