@@ -70,8 +70,13 @@ namespace ProtrndWebAPI.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteChatMessage(Guid id)
         {
-            await _chatService.DeleteChatMessage(id);
-            return Ok();
+            return Ok(new ActionResponse
+            {
+                Successful = true,
+                Message = "OK",
+                Data = await _chatService.DeleteChatMessage(id),
+                StatusCode = 200
+            });
         }
     }
 }

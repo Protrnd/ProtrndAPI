@@ -28,17 +28,17 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> SearchPostsByNameAsync(string name)
         {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(post => post.Caption.ToLower().Contains(name.ToLower()))).ToListAsync();
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(post => !post.Disabled && post.Caption.ToLower().Contains(name.ToLower()))).ToListAsync();
         }
 
         public async Task<List<Profile>> SearchProfilesByNameAsync(string name)
         {
-            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName.Contains(name.ToLower()) || profile.FullName.Contains(name) && profile.Disabled == false)).ToListAsync();
+            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.UserName.Contains(name.ToLower()) || profile.FullName.Contains(name) && !profile.Disabled)).ToListAsync();
         }
 
         public async Task<List<Profile>> SearchProfilesByEmailAsync(string email)
         {
-            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.Email.Contains(email.ToLower()) && profile.Disabled == false)).ToListAsync();
+            return await _profileCollection.Find(Builders<Profile>.Filter.Where(profile => profile.Email.Contains(email.ToLower()) && !profile.Disabled)).ToListAsync();
         }
 
         private static List<string> SearchCountResult(string count, string category)

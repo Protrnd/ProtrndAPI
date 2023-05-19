@@ -32,7 +32,7 @@ namespace ProtrndWebAPI.Services
 
         public async Task<List<Post>> GetPostProfileTagsAsync(int page, Guid profileId)
         {
-            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.Tags.Contains(profileId)))
+            return await _postsCollection.Find(Builders<Post>.Filter.Where(p => p.Tags.Contains(profileId) && !p.Disabled))
                 .SortByDescending(t => t.Time)
                 .Skip((page - 1) * 10)
                 .Limit(10)
@@ -237,14 +237,9 @@ namespace ProtrndWebAPI.Services
         public async Task<bool> DeletePostAsync(Guid postId, Guid profileId)
         {
             var filter = Builders<Post>.Filter.Where(p => p.Id == postId && p.ProfileId == profileId);
-            var post = await _postsCollection.Find(filter).FirstOrDefaultAsync();
-            if (post != null)
-            {
-                post.Disabled = true;
-                var result = await _postsCollection.ReplaceOneAsync(filter, post);
-                return result.ModifiedCount > 0;
-            }
-            return false;
+            var update = Builders<Post>.Update.Set(p => p.Disabled, true);
+            var result = await _postsCollection.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
         }
     }
 }

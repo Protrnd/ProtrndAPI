@@ -127,5 +127,19 @@ namespace ProtrndWebAPI.Controllers
         {
             return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.GetFollowingCount(id) });
         }
+
+        [HttpPut("disable/{id}")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<ActionResult<ActionResponse>> DisableAccount(Guid id)
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.UpdateDisableProfile(id, true) });
+        }
+
+        [HttpPut("enable/{id}")]
+        [ProTrndAuthorizationFilter(role: Constants.Admin)]
+        public async Task<ActionResult<ActionResponse>> EnableAccount(Guid id)
+        {
+            return Ok(new ActionResponse { Successful = true, StatusCode = 200, Message = ActionResponseMessage.Ok, Data = await _profileService.UpdateDisableProfile(id, false) });
+        }
     }
 }

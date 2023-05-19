@@ -69,11 +69,11 @@ namespace ProtrndWebAPI.Services
                 .ToListAsync();
         }
 
-        public async Task DeleteChatMessage(Guid chatId)
+        public async Task<bool> DeleteChatMessage(Guid chatId)
         {
             var delete = Builders<Chat>.Filter.Eq(c => c.Id, chatId);
-            await _chatCollection.DeleteOneAsync(delete);
-            return;
+            var deleteUpdate = await _chatCollection.DeleteOneAsync(delete);
+            return deleteUpdate.DeletedCount >= 0;
         }
     }
 }

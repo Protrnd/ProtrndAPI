@@ -47,6 +47,15 @@ namespace ProtrndWebAPI.Services.UserSevice
             return user;
         }
 
+        public async Task<bool> UpdateDisableProfile(Guid id, bool disable)
+        {
+            var filter = Builders<Profile>.Filter.Eq(p => p.Identifier, id);
+            var update = Builders<Profile>.Update.Set(p => p.Disabled, disable);
+            var updateQueryResult = await _profileCollection.UpdateOneAsync(filter, update);
+            if (updateQueryResult == null || updateQueryResult.ModifiedCount <= 0) return false;
+            return true;
+        }
+
         public async Task<bool> Follow(TokenClaims profile, Guid receiver)
         {
             if (profile != null)
