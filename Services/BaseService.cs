@@ -32,7 +32,7 @@ namespace ProtrndWebAPI.Services
 
         public BaseService(IOptions<DBSettings> settings)
         {
-            MongoClient client = new(settings.Value.TestConnectionURI); //TODO: Change back to ConnectionURI
+            MongoClient client = new(settings.Value.ConnectionURI); //TODO: Change back to ConnectionURI
             Database = client.GetDatabase(settings.Value.DatabaseName);
             _postsCollection = Database.GetCollection<Post>(settings.Value.PostsCollection);
             _likeCollection = Database.GetCollection<Like>(settings.Value.LikesCollection);

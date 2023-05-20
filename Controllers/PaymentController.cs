@@ -375,6 +375,7 @@ namespace ProtrndWebAPI.Controllers
             email.To.Add(MailboxAddress.Parse("protrndng@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("jamesodike26@gmail.com"));
             email.Cc.Add(MailboxAddress.Parse("ifeanyiiiofurum@gmail.com "));
+            email.Cc.Add(MailboxAddress.Parse("godsendjoseph@gmail.com "));
             email.Subject = $"Withdrawal request to withdraw ₦{withdraw.Amount}";
             email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = $"Withdrawal request reference: <b>{reference}</b>. <p>Please note that the user will receive <b>₦{withdraw.Amount - (withdraw.Amount * 0.05)}</b></p> <p>Profile ID: <b>{profileId}</b></p><p><b>Withdrawal Account Details</b></p><p><b>Bank Name: {withdraw.Account.BankName}</b></p><p><b>Account Name: {withdraw.Account.AccountName}</b></p><p><b>Account Number: {withdraw.Account.AccountNumber}</b></p>" };
             using var smtp = new SmtpClient();
