@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "https://localhost:5228",
-      "applicationUrl": "https://localhost:5228;http://localhost:8080",
+      "applicationUrl": "https://localhost:5228",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"
       }
@@ -24,7 +24,7 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Production" //Change to Production
+        "ASPNETCORE_ENVIRONMENT": "Production"
       }
     }
   }
