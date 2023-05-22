@@ -47,7 +47,7 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
-var port = Environment.GetEnvironmentVariable("PORT") ?? "443";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 var url = $"http://0.0.0.0:{port}";
 builder.Services.AddAuthentication(options =>
 {
